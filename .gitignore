@@ -1,0 +1,11 @@
+*~
+\#*\#
+.\#*
+
+.trash/
+recentf
+auto-save-list/
+semanticdb/
+straight/*
+!straight/versions
+*~
