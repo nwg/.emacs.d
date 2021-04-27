@@ -212,6 +212,9 @@
 (use-package org
   :straight t
   :config
+  (global-set-key (kbd "C-c l") 'org-store-link)
+  (global-set-key (kbd "C-c a") 'org-agenda)
+  (global-set-key (kbd "C-c c") 'org-capture)
   (setq org-support-shift-select t)
   (setq org-capture-templates
         '(("t" "Todo" entry (file+headline "~/Documents/org/gtd.org" "Tasks")

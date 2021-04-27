@@ -2,7 +2,12 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-(("e"
+(("org-capture-last-stored"
+ (filename . "~/Documents/org/gtd.org")
+ (front-context-string . "** TODO We have ")
+ (rear-context-string)
+ (position . 9))
+("e"
  (filename . "~/Documents/Math/about-e.tex")
  (front-context-string . "\\documentclass[1")
  (rear-context-string)
