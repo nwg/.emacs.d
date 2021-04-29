@@ -2,16 +2,16 @@
 ;;; This format is meant to be slightly human-readable;
 ;;; nevertheless, you probably don't want to edit it.
 ;;; -*- End Of Bookmark File Format Version Stamp -*-
-(("org-capture-last-stored"
- (filename . "~/Documents/org/gtd.org")
- (front-context-string . "** TODO We have ")
- (rear-context-string)
- (position . 9))
-("e"
- (filename . "~/Documents/Math/about-e.tex")
+(("about-e"
+ (filename . "~/Documents/Notes/about-e/about-e.tex")
  (front-context-string . "\\documentclass[1")
  (rear-context-string)
  (position . 1))
+("org-capture-last-stored"
+ (filename . "~/Documents/org/journal.org")
+ (front-context-string . "**** s\n   Entere")
+ (rear-context-string . "1-04-27 Tuesday\n")
+ (position . 52))
 ("init"
  (filename . "~/.emacs.d/init.el")
  (front-context-string . "(let ((my-path (")

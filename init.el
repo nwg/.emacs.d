@@ -4,8 +4,8 @@
 
 (global-auto-revert-mode t)
 (global-display-line-numbers-mode)
-;; Dsetqon't pop up new gui window for files opened from cmdline
-(setq ns-pop-up-frames nil)
+;; ;; Don't pop up new gui window for files opened from cmdline
+;; (setq ns-pop-up-framepens nil)
 ;; straight.el setup
 (setq straight-use-package-by-default t)
 (defvar bootstrap-version)
@@ -26,39 +26,6 @@
 
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
-
-(customize-set-variable
- 'display-buffer-base-action
- '((display-buffer-same-window display-buffer-reuse-window
-    display-buffer-in-previous-window
-    display-buffer-use-some-window)))
-
-(customize-set-variable
- 'display-buffer-alist
- (cons '("^CAPTURE-.*\\.org$" (display-buffer-same-window display-buffer-reuse-window))
-       display-buffer-alist))
-
-(defun my-backward-delete (arg)
-  (interactive "P")
-  (message "here")
-  (funcall-interactively 'ivy-backward-delete-char)
-  )
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(ivy-on-del-error-function #'ivy-immediate-done)
- '(lispy-backward-delete-char-fn 'my-backward-delete)
- '(lispy-backward-delete-char-untabify-fn 'my-backward-delete)
- '(safe-local-variable-values '((TeX-command-extra-options . "-shell-escape"))))
-
-
-;; (use-package lispy
-;;   :config)
-
-;; (add-hook 'emacs-lisp-mode-hook 'lispy-mode)
 
 (use-package solarized-theme :straight t)
 (load-theme 'solarized-light t)
@@ -209,9 +176,19 @@
 		"\\|" "^_region_\\.tex$"
 		)))
 
+(defun open-message-link (message-id)
+  (browse-url-default-macosx-browser
+   (concat
+    "message:"
+    (org-link-encode message-id '(?\< ?\>)))))
+
 (use-package org
   :straight t
   :config
+  (require 'org-protocol)
+
+  (org-add-link-type "message" 'open-message-link)
+
   (global-set-key (kbd "C-c l") 'org-store-link)
   (global-set-key (kbd "C-c a") 'org-agenda)
   (global-set-key (kbd "C-c c") 'org-capture)
@@ -219,6 +196,8 @@
   (setq org-capture-templates
         '(("t" "Todo" entry (file+headline "~/Documents/org/gtd.org" "Tasks")
            "* TODO %?\n  %i\n  %a")
+          ("e" "Email Todo" entry (file+headline "~/Documents/org/gtd.org" "Tasks")
+           "* TODO %i%?\n  %a\n  %U\n")
           ("j" "Journal" entry (file+datetree "~/Documents/org/journal.org")
            "* %?\nEntered on %U\n  %i\n  %a"))))
 
@@ -252,19 +231,10 @@
   :straight t
   :after all-the-icons
   :config
-  (dashboard-setup-startup-hook)
   (setq dashboard-set-heading-icons t)
   (setq dashboard-set-file-icons t)
   (setq dashboard-set-init-info t)
-  (setq dashboard-startup-banner "~/.emacs.d/tree.png"))
-
-(toggle-debug-on-error)
-
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+  (setq dashboard-startup-banner "~/.emacs.d/tree.png")
+  (dashboard-setup-startup-hook))
 
 (server-start)
