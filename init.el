@@ -204,28 +204,28 @@
 (use-package all-the-icons
   :straight t)
 
-(use-package helm-descbinds
-  :straight t
-  :bind
-   ("C-h b" . helm-descbinds))
+;; (use-package helm-descbinds
+;;   :straight t
+;;   :bind
+;;    ("C-h b" . helm-descbinds))
 
-(use-package helm
-  :straight t
-  :config
-  (helm-mode 1)
-  ;; (add-to-list 'display-buffer-alist
-  ;;              `(,(rx bos "*helm" (* not-newline) "*" eos)
-  ;;                (display-buffer-in-side-window)
-  ;;                (inhibit-same-window . t)
-  ;;                (window-height . 0.4)))
-  (setq helm-bookmark-show-location t)
-  :bind
-  (("M-x" . helm-M-x)
-   ("C-x C-f" . helm-find-files)
-   ("C-x r l" . helm-bookmarks)
-   ("C-x C-b" . helm-buffers-list)
-   ("M-s o" . helm-occur)
-   ("C-h a" . helm-apropos)))
+;; (use-package helm
+;;   :straight t
+;;   :config
+;;   (helm-mode 1)
+;;   ;; (add-to-list 'display-buffer-alist
+;;   ;;              `(,(rx bos "*helm" (* not-newline) "*" eos)
+;;   ;;                (display-buffer-in-side-window)
+;;   ;;                (inhibit-same-window . t)
+;;   ;;                (window-height . 0.4)))
+;;   (setq helm-bookmark-show-location t)
+;;   :bind
+;;   (("M-x" . helm-M-x)
+;;    ("C-x C-f" . helm-find-files)
+;;    ("C-x r l" . helm-bookmarks)
+;;    ("C-x C-b" . helm-buffers-list)
+;;    ("M-s o" . helm-occur)
+;;    ("C-h a" . helm-apropos)))
 
 (use-package dashboard
   :straight t
