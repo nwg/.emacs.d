@@ -1,0 +1,16 @@
+#!/usr/bin/env zsh
+
+replace_vars () {
+    verify_nonempty_args $# 2 "$@" || { return 1 }
+
+    local replace=$1
+    local text=$2
+    local prefix=${3:-'%'}
+    for key value in "${(@kvP)replace}"; do
+        local match="${prefix}${key}"
+        text=${text//${match}/$value}
+    done
+    echo $text
+}
+
+replace_vars "$@"

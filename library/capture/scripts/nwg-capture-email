@@ -4,10 +4,19 @@ source "$(dirname $0)/env.sh"
 
 set -e
 
-template="e"
-title="$1 sent: $2"
+usage () {
+    echo "$0 <sender> <subject> <apple-mail-url>"
+}
+
+verify_nonempty_args $# 3 "$@" || { usage; exit 1; }
+
+template="$NWG_CAPTURE_EMAIL_TEMPLATE"
+local -A replacements
+replacements[sender]=$1
+replacements[subject]=$2
+title=$(replace_vars "replacements" $NWG_CAPTURE_EMAIL_URL_DESCRIPTION)
+body=$(replace_vars "replacements" $NWG_CAPTURE_EMAIL_INITIAL_CONTENT)
 url=$3
-body="Read Message"
 
 /usr/bin/open -ea "$NWG_EMACS_APP"
 org_url=$( nwg_make_capture_url "$template" "$url" "$title" "$body" )

@@ -63,6 +63,13 @@
 					<key>itemType</key>
 					<string>com.apple.mail.message-object</string>
 				</dict>
+				<key>ActionRuntimeParameters</key>
+				<dict>
+					<key>itemType</key>
+					<string>com.apple.mail.message-object</string>
+					<key>temporary items path</key>
+					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/0F352136-082D-4F45-95DD-80CCE30E37A9/1/com.apple.Automator.GetSelectedMailItems2</string>
+				</dict>
 				<key>BundleIdentifier</key>
 				<string>com.apple.Automator.GetSelectedMailItems2</string>
 				<key>CFBundleVersion</key>
@@ -156,7 +163,14 @@
 				<key>ActionParameters</key>
 				<dict>
 					<key>source</key>
-					<string>on run {input, parameters}	set urlList to {}	tell application "Mail"		repeat with selectedMail in input			set messageid to message id of selectedMail			set urlText to "message://&lt;" &amp; messageid &amp; "&gt;"			set messageSender to (extract address from (sender of selectedMail))			set messageSubject to subject of selectedMail			set end of urlList to messageSender			set end of urlList to messageSubject			set end of urlList to urlText		end repeat	end tell	return urlListend run</string>
+					<string>on run {input, parameters}	set urlList to {}	tell application "Mail"		repeat with selectedMail in input			set messageid to message id of selectedMail			set urlText to "message://&lt;" &amp; messageid &amp; "&gt;"			set messageSender to sender of selectedMail			set messageSubject to subject of selectedMail			set end of urlList to messageSender			set end of urlList to messageSubject			set end of urlList to urlText		end repeat	end tell	return urlListend run</string>
+				</dict>
+				<key>ActionRuntimeParameters</key>
+				<dict>
+					<key>source</key>
+					<string>on run {input, parameters}	set urlList to {}	tell application "Mail"		repeat with selectedMail in input			set messageid to message id of selectedMail			set urlText to "message://&lt;" &amp; messageid &amp; "&gt;"			set messageSender to sender of selectedMail			set messageSubject to subject of selectedMail			set end of urlList to messageSender			set end of urlList to messageSubject			set end of urlList to urlText		end repeat	end tell	return urlListend run</string>
+					<key>temporary items path</key>
+					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/0F352136-082D-4F45-95DD-80CCE30E37A9/1/com.apple.Automator.RunScript</string>
 				</dict>
 				<key>BundleIdentifier</key>
 				<string>com.apple.Automator.RunScript</string>
@@ -275,6 +289,21 @@ end run</string>
 					<string>/bin/zsh</string>
 					<key>source</key>
 					<string></string>
+				</dict>
+				<key>ActionRuntimeParameters</key>
+				<dict>
+					<key>COMMAND_STRING</key>
+					<string>exec tr '\n' '\0' | xargs -0 -L3 $HOME/.emacs.d/library/capture/scripts/nwg-capture-email</string>
+					<key>CheckedForUserDefaultShell</key>
+					<true/>
+					<key>inputMethod</key>
+					<integer>0</integer>
+					<key>shell</key>
+					<string>/bin/zsh</string>
+					<key>source</key>
+					<string></string>
+					<key>temporary items path</key>
+					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/0F352136-082D-4F45-95DD-80CCE30E37A9/1/com.apple.RunShellScript</string>
 				</dict>
 				<key>BundleIdentifier</key>
 				<string>com.apple.RunShellScript</string>
@@ -400,7 +429,7 @@ end run</string>
 			<key>to</key>
 			<string>DBCAEC3A-AD62-4C29-935F-148996C32995 - DBCAEC3A-AD62-4C29-935F-148996C32995</string>
 		</dict>
-		<key>E58346C0-3D03-4A1D-9D41-A0A5BB6586B2</key>
+		<key>CD5097C7-BDEE-419F-B4D8-F6C7A893E950</key>
 		<dict>
 			<key>from</key>
 			<string>462FA1E4-00B9-4326-9ED1-58CCCE7F617D - 462FA1E4-00B9-4326-9ED1-58CCCE7F617D</string>

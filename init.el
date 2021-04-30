@@ -196,8 +196,8 @@
   (setq org-capture-templates
         '(("t" "Todo" entry (file+headline "~/Documents/org/gtd.org" "Tasks")
            "* TODO %?\n  %i\n  %a")
-          ("e" "Email Todo" entry (file+headline "~/Documents/org/gtd.org" "Tasks")
-           "* TODO %i%?\n  %a\n  %U\n")
+          ("e" "Email" entry (file+datetree "~/Documents/org/journal.org")
+           "* %i%?\nEntered on %U\n  %a"))))
           ("j" "Journal" entry (file+datetree "~/Documents/org/journal.org")
            "* %?\nEntered on %U\n  %i\n  %a"))))
 
