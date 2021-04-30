@@ -1,0 +1,7 @@
+#!/usr/bin/env zsh
+
+nwg_urlquote() {
+    python3 -c "import urllib.parse as p; print(p.quote('''$1'''))"
+}
+
+nwg_urlquote "$@"

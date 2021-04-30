@@ -1,0 +1,16 @@
+#!/usr/bin/env zsh
+
+nwg_make_capture_url() {
+    local template=$1; shift
+    local url=$1; shift
+    local title=$1; shift
+    local body=$1; shift
+
+    local url=$(nwg_urlquote "${url}")
+    local title=$(nwg_urlquote "${title}")
+    local body=$(nwg_urlquote "${body}")
+
+    echo "org-protocol://capture?template=${template}&url=${url}&title=${title}&body=${body}"
+}
+
+nwg_make_capture_url "$@"

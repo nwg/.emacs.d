@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+
+nwg_getpid() {
+    pid=$(exec sh -c 'echo "$PPID"')
+    test "$1" && eval "$1=\$pid"
+}
+
+nwg_getpid "$@"

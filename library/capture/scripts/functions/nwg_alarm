@@ -1,0 +1,46 @@
+#!/usr/bin/env sh
+
+alarm_on_term () {
+    local p
+    nwg_getpid p
+    pkill -P $p
+    wait
+}
+
+start_alarm () {
+    if [ -n "$alarm_pid" ]; then
+        return 1
+    fi
+
+    echo "Starting alarm"
+
+    local ppid
+    nwg_getpid ppid
+    (
+        set -e
+        trap "alarm_on_term" TERM
+        sleep $timeout &
+        wait $!
+        kill -ALRM $ppid
+    )&
+    alarm_pid=$!
+}
+
+stop_alarm () {
+    if [ -n "$alarm_pid" ]; then
+        echo "Stopping alarm"
+        kill "$alarm_pid" 2>/dev/null
+        wait "$alarm_pid" 2>/dev/null
+        unset alarm_pid
+    fi
+}
+
+nwg_alarm () {
+    case $1 in
+        start) start_alarm ;;
+        stop) stop_alarm ;;
+        *) return 1
+    esac
+}
+
+nwg_alarm "$@"

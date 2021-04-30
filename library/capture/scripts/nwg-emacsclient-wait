@@ -1,0 +1,117 @@
+#!/usr/bin/env zsh
+
+set -e
+source "$(dirname $0)/env.sh"
+set +e
+
+usage () {
+    echo "usage: $0 [-e emacsclient] [-t timeout] -- [emacsclient-args]"
+    echo "  -e cmd, --emacsclient cmd   Specify emacsclient cmd (default emacsclient in \$PATH)"
+    echo "  -t val, --timeout val       Try for this long before giving up (default 30)"
+    echo "  -d delay, --delay val       Delay this long between tries when polling server (default 0.5)"
+    echo "  -- emacsclient-args         These arguments will be passed along to emacsclient when actually invoked. -a is not allowed, as it is forced to '/bin/false'"
+}
+
+parse_args () {
+    timeout=30
+    delay=0.5
+
+    local args=( )
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                usage; exit 0;
+                ;;
+            -t|--timeout)
+                shift; timeout=$1; shift
+                ;;
+            -e|--emacsclient)
+                shift; emacsclient=$1; shift
+                ;;
+            -d|--delay)
+                shift; delay=$1; shift
+                ;;
+            --)
+                shift; emacsclient_args=$*; shift $#
+                ;;
+            *)
+                args+=( "$1" ); shift
+                ;;
+        esac
+    done
+
+    if [ "${#args[@]}" -gt 0 ]; then
+        echo "Unknown argument(s): ${args[@]}"
+        exit 1
+    fi
+
+    if [ -z "${emacsclient}" ]; then
+        emacsclient=$(which emacsclient)
+        if [ -n "${emacsclient}" ]; then
+            echo "emacsclient not specified. Trying ${emacsclient}"
+        fi
+    fi
+
+    if [ -z "${emacsclient}" -o ! -x "${emacsclient}" ]; then
+        echo "Cannot find a suitable emacsclient. Place in path or execute with '-e emacsclient'"
+        exit 1
+    fi
+}
+
+cleanup () {
+    echo "Cleanup"
+    rm -f $CLIENT_ERR
+    nwg_alarm stop
+}
+
+on_alrm () {
+    echo "Server did not respond in time. Did you forget to call (server-start) in your emacs init?"
+    exit 1
+}
+
+is_server_ready () {
+    num_frames=$("${emacsclient}" -a "/bin/false" -e "(length (frame-list))" 2>/dev/null | xargs || echo 0)
+    re='^[0-9]+$'
+    [ "$?" -eq 0 ] && [[ "$num_frames" =~ $re ]] && [ "$num_frames" -gt 0 ]
+}
+
+parse_args "$@"
+
+trap "on_alrm" ALRM
+trap "cleanup" EXIT TERM
+trap "exit 1" INT
+
+nwg_alarm start
+
+echo "Waiting for server..."
+while true
+do
+    if is_server_ready; then
+        success=1
+        break
+    fi
+    sleep $delay &
+    wait $!
+done
+
+echo "Server is up! Sending client command."
+cmd=( "${emacsclient}" -a "/bin/false" -n $emacsclient_args )
+CLIENT_ERR=$(mktemp -u)
+mkfifo $CLIENT_ERR
+( exec 2>$CLIENT_ERR "${cmd[@]}" ) &
+client_pid=$!
+exec 3<$CLIENT_ERR
+rm -f $CLIENT_ERR
+
+wait $client_pid
+if [ "$?" -ne 0 ]; then
+    echo "Command ${cmd[@]} failed"
+    echo
+    echo "------------ Failed Command Output ------------"
+    cat <&3
+    echo
+    echo "--------------------- End ---------------------"
+    echo
+    exit 1
+fi
