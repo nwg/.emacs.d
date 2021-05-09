@@ -68,7 +68,7 @@
 					<key>itemType</key>
 					<string>com.apple.mail.message-object</string>
 					<key>temporary items path</key>
-					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/0F352136-082D-4F45-95DD-80CCE30E37A9/1/com.apple.Automator.GetSelectedMailItems2</string>
+					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/6204674B-CC8D-4B01-A99E-58A5B533534F/1/com.apple.Automator.GetSelectedMailItems2</string>
 				</dict>
 				<key>BundleIdentifier</key>
 				<string>com.apple.Automator.GetSelectedMailItems2</string>
@@ -170,7 +170,7 @@
 					<key>source</key>
 					<string>on run {input, parameters}	set urlList to {}	tell application "Mail"		repeat with selectedMail in input			set messageid to message id of selectedMail			set urlText to "message://&lt;" &amp; messageid &amp; "&gt;"			set messageSender to sender of selectedMail			set messageSubject to subject of selectedMail			set end of urlList to messageSender			set end of urlList to messageSubject			set end of urlList to urlText		end repeat	end tell	return urlListend run</string>
 					<key>temporary items path</key>
-					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/0F352136-082D-4F45-95DD-80CCE30E37A9/1/com.apple.Automator.RunScript</string>
+					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/6204674B-CC8D-4B01-A99E-58A5B533534F/1/com.apple.Automator.RunScript</string>
 				</dict>
 				<key>BundleIdentifier</key>
 				<string>com.apple.Automator.RunScript</string>
@@ -224,7 +224,7 @@ end run</string>
 				<key>isViewVisible</key>
 				<integer>1</integer>
 				<key>location</key>
-				<string>357.250000:521.000000</string>
+				<string>357.250000:349.000000</string>
 				<key>nibPath</key>
 				<string>/System/Library/Automator/Run AppleScript.action/Contents/Resources/Base.lproj/main.nib</string>
 			</dict>
@@ -303,7 +303,7 @@ end run</string>
 					<key>source</key>
 					<string></string>
 					<key>temporary items path</key>
-					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/0F352136-082D-4F45-95DD-80CCE30E37A9/1/com.apple.RunShellScript</string>
+					<string>/var/folders/h3/rmfj42hs77n_h2kps25_6hn80000gq/T/6204674B-CC8D-4B01-A99E-58A5B533534F/1/com.apple.RunShellScript</string>
 				</dict>
 				<key>BundleIdentifier</key>
 				<string>com.apple.RunShellScript</string>
@@ -407,12 +407,10 @@ end run</string>
 						<string>4</string>
 					</dict>
 				</dict>
-				<key>conversionLabel</key>
-				<integer>0</integer>
 				<key>isViewVisible</key>
 				<integer>1</integer>
 				<key>location</key>
-				<string>357.250000:883.000000</string>
+				<string>357.250000:531.000000</string>
 				<key>nibPath</key>
 				<string>/System/Library/Automator/Run Shell Script.action/Contents/Resources/Base.lproj/main.nib</string>
 			</dict>
@@ -422,19 +420,19 @@ end run</string>
 	</array>
 	<key>connectors</key>
 	<dict>
-		<key>468FE844-5C20-4F35-9089-081A5EF5421F</key>
-		<dict>
-			<key>from</key>
-			<string>64D72993-B3A5-49B5-83CD-B7101E855A04 - 64D72993-B3A5-49B5-83CD-B7101E855A04</string>
-			<key>to</key>
-			<string>DBCAEC3A-AD62-4C29-935F-148996C32995 - DBCAEC3A-AD62-4C29-935F-148996C32995</string>
-		</dict>
-		<key>CD5097C7-BDEE-419F-B4D8-F6C7A893E950</key>
+		<key>03051F6F-DA3C-4F30-92B8-44C82D8073E0</key>
 		<dict>
 			<key>from</key>
 			<string>462FA1E4-00B9-4326-9ED1-58CCCE7F617D - 462FA1E4-00B9-4326-9ED1-58CCCE7F617D</string>
 			<key>to</key>
 			<string>64D72993-B3A5-49B5-83CD-B7101E855A04 - 64D72993-B3A5-49B5-83CD-B7101E855A04</string>
+		</dict>
+		<key>16F103B1-963A-4F24-8C5B-8F90CC069EC3</key>
+		<dict>
+			<key>from</key>
+			<string>64D72993-B3A5-49B5-83CD-B7101E855A04 - 64D72993-B3A5-49B5-83CD-B7101E855A04</string>
+			<key>to</key>
+			<string>DBCAEC3A-AD62-4C29-935F-148996C32995 - DBCAEC3A-AD62-4C29-935F-148996C32995</string>
 		</dict>
 	</dict>
 	<key>workflowMetaData</key>

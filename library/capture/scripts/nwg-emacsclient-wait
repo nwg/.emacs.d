@@ -95,6 +95,7 @@ do
     wait $!
 done
 
+nwg_alarm stop
 echo "Server is up! Sending client command."
 cmd=( "${emacsclient}" -a "/bin/false" -n $emacsclient_args )
 CLIENT_ERR=$(mktemp -u)

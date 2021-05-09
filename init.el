@@ -1,25 +1,26 @@
+;; -*- mode: emacs-lisp; lexical-binding: t; -*-
+
 (let ((my-path (expand-file-name "/Library/TeX/texbin:/opt/local/bin")))
   (setenv "PATH" (concat my-path ":" (getenv "PATH")))
   (add-to-list 'exec-path my-path))
 
 (global-auto-revert-mode t)
 (global-display-line-numbers-mode)
-;; ;; Don't pop up new gui window for files opened from cmdline
-;; (setq ns-pop-up-framepens nil)
+
 ;; straight.el setup
 (setq straight-use-package-by-default t)
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
-	"straight/repos/straight.el/bootstrap.el"
-	user-emacs-directory))
+        "straight/repos/straight.el/bootstrap.el"
+        user-emacs-directory))
       (bootstrap-version 5))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
-	(url-retrieve-synchronously
-	 "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-	 'silent
-	 'inhibit-cookies)
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent
+         'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
@@ -29,80 +30,11 @@
 
 (use-package solarized-theme :straight t)
 (load-theme 'solarized-light t)
-;; (add-hook 'after-change-major-mode-hook 'superword-mode)
 
-;; (add-hook
-;;  'ivy-mode-hook
-;;  (lambda ()
-;;    (message "here in ivy-mode hook")))
-
-(use-package ivy
-  :straight t
-  ;; :after lispy
-  :config
-  (ivy-mode 1)
-  (setq ivy-use-virtual-buffers t)
-  (setq ivy-count-format "(%d/%d) ")
-  ;; (setq enable-recursive-minibuffers t)
-  (global-set-key (kbd "C-c C-r") 'ivy-resume)
-  (global-set-key (kbd "C-c g") 'counsel-git)
-  (global-set-key (kbd "C-c j") 'counsel-git-grep)
-  ;; (message (format "%s" ivy-backward-delete-char))
-  )
-
-;; (eval-after-load 'ivy
-;;   '(progn
-;;     (setq lispy-backward-delete-char-fn 'ivy-backward-delete-char)
-;;     (setq lispy-backward-delete-char-untabify-fn 'ivy-backward-delete-char))
-;;   )
-
-(setq-default tab-always-indent 'complete)
+(setq-default tab-always-indent nil)
+(setq-default indent-line-function 'indent-relative-first-indent-point)
 (setq-default tab-width 2)
 (setq-default indent-tabs-mode nil)
-
-;; (use-package company
-;;   :ensure t
-;;   :diminish company-mode
-;;   ;; Use Company for completion
-;;   :bind (("C-<tab>" . company-complete-common)
-;;          :map company-mode-map
-;;          ([remap completion-at-point] . company-complete-common)
-;;          ([remap complete-symbol] . company-complete-common))
-;;   :init (global-company-mode 1)
-;;   :config
-;;   (setq tab-always-indent 'complete)
-;;   ;; some better default values
-;;   (setq company-idle-delay 0.2)
-;;   (setq company-tooltip-limit 10)
-;;   (setq company-minimum-prefix-length 1)
-;;   (setq company-selection-wrap-around t)
-
-;;   ;; align annotations in tooltip
-;;   (setq company-tooltip-align-annotations t)
-
-;;   ;; nicer keybindings
-;;   (define-key company-active-map (kbd "C-n") 'company-select-next)
-;;   (define-key company-active-map (kbd "C-p") 'company-select-previous)
-;;   (define-key company-active-map (kbd "C-d") 'company-show-doc-buffer)
-
-;;   ;; put most often used completions at stop of list
-;;   (setq company-transformers '(company-sort-by-occurrence)))
-
-
-;; (custom-set-variables
-;;  ;; custom-set-variables was added by Custom.
-;;  ;; If you edit it by hand, you could mess it up, so be careful.
-;;  ;; Your init file should contain only one such instance.
-;;  ;; If there is more than one, they won't work right.
-;;  '(lispy-backward-delete-char-fn 'ivy-backward-delete-char)
-;; '(lispy-backward-delete-char-untabify-fn 'ivy-backward-delete-char))
-;; (custom-set-faces
-;; custom-set-faces was added by Custom.
-;; If you edit it by hand, you could mess it up, so be careful.
-;; Your init file should contain only one such instance.
-;; If there is more than one, they won't work right.
-;; )
-(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
 (add-hook 'dired-load-hook
           (lambda ()
@@ -110,21 +42,15 @@
             ;; Set dired-x global variables here.  For example:
             ;; (setq dired-guess-shell-gnutar "gtar")
             ;; (setq dired-x-hands-off-my-keys nil)
-	    (setq dired-omit-files
-		  (concat dired-omit-files
-			  "\\|" "^.+\\~$"
-			  ))
+      (setq dired-omit-files
+      (concat dired-omit-files
+        "\\|" "^.+\\~$"
+        ))
             ))
 (add-hook 'dired-mode-hook
           (lambda ()
-	    (dired-omit-mode 1)))
+      (dired-omit-mode 1)))
             
-
-;; (load "popup-complete")
-
-;; (add-hook 'emacs-lisp-mode-hook
-;; 	  (lambda ()
-;; 	    (setq complete-in-region-use-popup t)))
 
 (use-package racket-mode
              :straight t
@@ -143,6 +69,25 @@
   (interactive)
   (indent-rigidly (- tab-width)))
 
+(defun move-buffer-to-previous-frame (ARG)
+  "Move a newly opened buffer to the most-recently-used buffer"
+  (interactive "P")
+  (let* ((sw (selected-window))
+         (pw (get-mru-window nil nil t))
+         (buf (current-buffer)))
+    (switch-to-prev-buffer sw nil)
+    (set-window-buffer pw buf t)
+    (select-window pw nil)))
+
+(global-set-key (kbd "C-x r R") 'recentf-open-files)
+(global-set-key (kbd "C-x w o") 'window-swap-states)
+(global-set-key (kbd "C-x w -") 'move-buffer-to-previous-frame)
+
+(cl-loop for i from 0 to 9
+      do (let ((keys (format "C-x r %d" i))
+               (sym (format "recentf-open-most-recent-file-%d" i)))
+           (global-set-key (kbd keys) (intern sym))))
+
 (use-package tex
   :straight auctex
   :ensure t
@@ -155,26 +100,20 @@
   (setq-default TeX-master nil)
   (setq-default TeX-newline-function 'newline-and-indent-relative)
   
-  (add-hook
-   'LaTeX-mode-hook
-   (lambda ()
-     (setq tab-always-indent nil)
-     ;; (setq indent-line-function 'insert-tab)
-     (setq indent-line-function 'indent-relative-first-indent-point)))
-	      
   )
 
 (with-eval-after-load 'dired-x
   (setq dired-omit-files
-	(concat dired-omit-files
-		"\\|" "\\.pdf$"
-		"\\|" "\\.aux$"
-		"\\|" "\\.log$"
-		"\\|" "\\.prv$"
-		"\\|" "^_region_\\.log$"
-		"\\|" "^_region_\\.prv"
-		"\\|" "^_region_\\.tex$"
-		)))
+  (concat dired-omit-files
+    "\\|" "\\.pdf$"
+    "\\|" "\\.aux$"
+    "\\|" "\\.log$"
+    "\\|" "\\.prv$"
+    "\\|" "^_region_\\.log$"
+    "\\|" "^_region_\\.prv"
+    "\\|" "^_region_\\.tex$"
+    "\\|" "^.DS_Store$"
+    )))
 
 (defun open-message-link (message-id)
   (browse-url-default-macosx-browser
@@ -192,49 +131,72 @@
   (global-set-key (kbd "C-c l") 'org-store-link)
   (global-set-key (kbd "C-c a") 'org-agenda)
   (global-set-key (kbd "C-c c") 'org-capture)
+  (setq org-cycle-emulate-tab 'white)
   (setq org-support-shift-select t)
   (setq org-capture-templates
-        '(("t" "Todo" entry (file+headline "~/Documents/org/gtd.org" "Tasks")
-           "* TODO %?\n  %i\n  %a")
-          ("e" "Email" entry (file+datetree "~/Documents/org/journal.org")
-           "* %i%?\nEntered on %U\n  %a"))))
-          ("j" "Journal" entry (file+datetree "~/Documents/org/journal.org")
-           "* %?\nEntered on %U\n  %i\n  %a"))))
+        '(("t" "Todo" entry (file+headline "~/Documents/Notes/gtd.org" "Tasks")
+           "* TODO %?\n  %i\n  %a")))
+  (setq org-adapt-indentation t
+        org-hide-leading-stars t) 
 
+  (setq org-bookmark-names-plist
+        '(last-capture "Last Org Capture"
+          last-refile "Last Org Refile"
+          last-capture-marker "Last Org Capture Marker"))
+
+  (add-hook
+   'org-mode-hook
+   (lambda ()
+     (setq tab-always-indent nil)
+     (setq indent-line-function 'indent-relative-first-indent-point)))
+
+
+  )
+
+(use-package org-journal
+  :straight t
+  :config
+  (setq org-journal-dir "~/Documents/Notes/journal/"
+        org-journal-date-format "%A, %d %B %Y")
+
+  (defun org-journal-find-location ()
+    ;; Open today's journal, but specify a non-nil prefix argument in order to
+    ;; inhibit inserting the heading; org-capture will insert the heading.
+    (org-journal-new-entry t)
+    (unless (eq org-journal-file-type 'daily)
+      (org-narrow-to-subtree))
+    (goto-char (point-max)))
+
+  (setq
+   org-capture-templates
+   (append org-capture-templates
+           '(("e" "Email Journal Entry" plain (function org-journal-find-location)
+              "** %(format-time-string org-journal-time-format)%^{Title}t\n    %?%i\n    %a")
+             ("j" "Journal Entry" plain (function org-journal-find-location)
+              "** %(format-time-string org-journal-time-format)%^{Title}t\n    %i%?"
+              :jump-to-captured t :immediate-finish t))))
+
+  )
+  
 (use-package all-the-icons
   :straight t)
-
-;; (use-package helm-descbinds
-;;   :straight t
-;;   :bind
-;;    ("C-h b" . helm-descbinds))
-
-;; (use-package helm
-;;   :straight t
-;;   :config
-;;   (helm-mode 1)
-;;   ;; (add-to-list 'display-buffer-alist
-;;   ;;              `(,(rx bos "*helm" (* not-newline) "*" eos)
-;;   ;;                (display-buffer-in-side-window)
-;;   ;;                (inhibit-same-window . t)
-;;   ;;                (window-height . 0.4)))
-;;   (setq helm-bookmark-show-location t)
-;;   :bind
-;;   (("M-x" . helm-M-x)
-;;    ("C-x C-f" . helm-find-files)
-;;    ("C-x r l" . helm-bookmarks)
-;;    ("C-x C-b" . helm-buffers-list)
-;;    ("M-s o" . helm-occur)
-;;    ("C-h a" . helm-apropos)))
 
 (use-package dashboard
   :straight t
   :after all-the-icons
   :config
+  (setq dashboard-banner-logo-title "Nate's Emacs")
+  (setq dashboard-set-navigator t)
+  ;; (setq dashboard-show-shortcuts nil)
+  (dashboard-modify-heading-icons '((recents . "file-text")))
+  
   (setq dashboard-set-heading-icons t)
   (setq dashboard-set-file-icons t)
   (setq dashboard-set-init-info t)
   (setq dashboard-startup-banner "~/.emacs.d/tree.png")
+  (setq dashboard-center-content t)
+  (global-set-key (kbd "C-M-s-SPC") (lambda () (interactive) (switch-to-buffer "*dashboard*")))
+
   (dashboard-setup-startup-hook))
 
 (server-start)
