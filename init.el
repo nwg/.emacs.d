@@ -145,11 +145,14 @@
           last-capture-marker "Last Org Capture Marker"))
 
   (add-hook
+   'org-src-mode-hook
+   (lambda ()
+     (setq tab-always-indent nil)))
+  
+  (add-hook
    'org-mode-hook
    (lambda ()
-     (setq tab-always-indent nil)
-     (setq indent-line-function 'indent-relative-first-indent-point)))
-
+     (setq tab-always-indent t)))
 
   )
 
