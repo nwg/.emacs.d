@@ -185,7 +185,7 @@
               "** %(format-time-string org-journal-time-format)%^{Title}\n    %?%i\n    %a"
               :jump-to-captured t)
              ("j" "Journal Entry" plain (function org-journal-find-location)
-              "** %(format-time-string org-journal-time-format)%^{Title}\n    %i%?"
+              "** %(format-time-string org-journal-time-format)%^{Title}\n    %i%i\n    %a"
               :jump-to-captured t))))
 
   )
