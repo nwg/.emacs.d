@@ -4,11 +4,7 @@
   (setenv "PATH" (concat my-path ":" (getenv "PATH")))
   (add-to-list 'exec-path my-path))
 
-(global-auto-revert-mode t)
-(global-display-line-numbers-mode)
-
 ;; straight.el setup
-(setq straight-use-package-by-default t)
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
@@ -26,38 +22,21 @@
   (load bootstrap-file nil 'nomessage))
 
 (straight-use-package 'use-package)
-(setq straight-use-package-by-default t)
+;; end straight.el setup
 
-(use-package solarized-theme :straight t)
-(load-theme 'solarized-light t)
+(global-auto-revert-mode t)
+(global-display-line-numbers-mode)
 
 (setq-default tab-always-indent nil)
 (setq-default indent-line-function 'indent-relative-first-indent-point)
 (setq-default tab-width 2)
 (setq-default indent-tabs-mode nil)
 
-(add-hook 'dired-load-hook
-          (lambda ()
-            (load "dired-x")
-            ;; Set dired-x global variables here.  For example:
-            ;; (setq dired-guess-shell-gnutar "gtar")
-            ;; (setq dired-x-hands-off-my-keys nil)
-      (setq dired-omit-files
-      (concat dired-omit-files
-        "\\|" "^.+\\~$"
-        ))
-            ))
-(add-hook 'dired-mode-hook
-          (lambda ()
-      (dired-omit-mode 1)))
-            
-
-(use-package racket-mode
-             :straight t
-             :ensure t)
-
-(add-hook 'racket-mode 'show-paren-mode)
-
+(setq display-buffer-alist
+      (append
+       display-buffer-alist
+       '(("*Help*" display-buffer-reuse-window) 
+         ("*Help*" display-buffer-use-some-window))))
 
 (defun newline-and-indent-relative ()
   (interactive)
@@ -69,9 +48,9 @@
   (interactive)
   (indent-rigidly (- tab-width)))
 
-(defun move-buffer-to-previous-frame (ARG)
+(defun move-buffer-to-previous-frame ()
   "Move a newly opened buffer to the most-recently-used buffer"
-  (interactive "P")
+  (interactive)
   (let* ((sw (selected-window))
          (pw (get-mru-window nil nil t))
          (buf (current-buffer)))
@@ -88,9 +67,42 @@
                (sym (format "recentf-open-most-recent-file-%d" i)))
            (global-set-key (kbd keys) (intern sym))))
 
+
+(use-package solarized-theme
+  :straight t
+  :config
+  (load-theme 'solarized-light t))
+
+(use-package dired-x
+  :after dired
+  :config
+
+  (setq dired-omit-files
+        (concat dired-omit-files
+                "\\|" "\\.pdf$"
+                "\\|" "\\.aux$"
+                "\\|" "\\.log$"
+                "\\|" "\\.prv$"
+                "\\|" "^_region_\\.log$"
+                "\\|" "^_region_\\.prv"
+                "\\|" "^_region_\\.tex$"
+                "\\|" "^.DS_Store$"
+                "\\|" "^.+\\~$"
+                ))
+  
+  (add-hook 'dired-mode-hook
+            (lambda ()
+              (dired-omit-mode 1)))
+  )
+
+(use-package racket-mode
+  :straight t
+  :config
+  (add-hook 'racket-mode 'show-paren-mode)
+  )
+
 (use-package tex
   :straight auctex
-  :ensure t
   :defer t
   :config
   (setq TeX-PDF-mode t)
@@ -101,19 +113,6 @@
   (setq-default TeX-newline-function 'newline-and-indent-relative)
   
   )
-
-(with-eval-after-load 'dired-x
-  (setq dired-omit-files
-  (concat dired-omit-files
-    "\\|" "\\.pdf$"
-    "\\|" "\\.aux$"
-    "\\|" "\\.log$"
-    "\\|" "\\.prv$"
-    "\\|" "^_region_\\.log$"
-    "\\|" "^_region_\\.prv"
-    "\\|" "^_region_\\.tex$"
-    "\\|" "^.DS_Store$"
-    )))
 
 (defun open-message-link (message-id)
   (browse-url-default-macosx-browser
@@ -158,8 +157,12 @@
 
 (use-package org-journal
   :straight t
+  :bind
+  ("C-c j" . org-journal-new-entry)
+  ;; ("C-c j d" . org-journal-new-date-entry)
+  ;; ("C-c j s" . org-journal-new-scheduled-entry)
   :config
-  (setq org-journal-dir "~/Documents/Notes/journal/"
+  (setq org-journal-dir "~/Documents/Notes/Journal/"
         org-journal-date-format "%A, %d %B %Y")
 
   (defun org-journal-find-location ()
@@ -170,14 +173,20 @@
       (org-narrow-to-subtree))
     (goto-char (point-max)))
 
+  (setq org-journal-enable-agenda-integration t
+        org-icalendar-store-UID t
+        org-icalendar-include-todo "all"
+        org-icalendar-combined-agenda-file "~/Dropbox/emacs/org-agenda.ics")
+  
   (setq
    org-capture-templates
    (append org-capture-templates
            '(("e" "Email Journal Entry" plain (function org-journal-find-location)
-              "** %(format-time-string org-journal-time-format)%^{Title}t\n    %?%i\n    %a")
+              "** %(format-time-string org-journal-time-format)%^{Title}\n    %?%i\n    %a"
+              :jump-to-captured t)
              ("j" "Journal Entry" plain (function org-journal-find-location)
-              "** %(format-time-string org-journal-time-format)%^{Title}t\n    %i%?"
-              :jump-to-captured t :immediate-finish t))))
+              "** %(format-time-string org-journal-time-format)%^{Title}\n    %i%?"
+              :jump-to-captured t))))
 
   )
   
@@ -190,7 +199,6 @@
   :config
   (setq dashboard-banner-logo-title "Nate's Emacs")
   (setq dashboard-set-navigator t)
-  ;; (setq dashboard-show-shortcuts nil)
   (dashboard-modify-heading-icons '((recents . "file-text")))
   
   (setq dashboard-set-heading-icons t)
@@ -199,6 +207,11 @@
   (setq dashboard-startup-banner "~/.emacs.d/tree.png")
   (setq dashboard-center-content t)
   (global-set-key (kbd "C-M-s-SPC") (lambda () (interactive) (switch-to-buffer "*dashboard*")))
+
+  (setq dashboard-items '((bookmarks . 5)
+                          (recents  . 5)
+                          (agenda . 5)
+                          (registers . 5)))
 
   (dashboard-setup-startup-hook))
 
