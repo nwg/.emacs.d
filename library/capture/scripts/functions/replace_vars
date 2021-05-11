@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 replace_vars () {
-    verify_nonempty_args $# 2 "$@" || { return 1 }
+    nwg_verify_nonempty_args $# 2 "$@" || { return 1 }
 
     local replace=$1
     local text=$2

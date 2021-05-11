@@ -1,0 +1,19 @@
+#!/usr/bin/env zsh
+
+source "$(dirname $0)/env.sh"
+
+set -e
+
+self=$0
+
+usage () {
+    echo "$self <org-capture-url>"
+}
+
+nwg_verify_nonempty_args $# 1 "$@" || { usage; exit 1; }
+
+org_url="$1"
+
+/usr/bin/open -ga "$NWG_EMACS_APP"
+"${NWG_CAPTURE}/scripts/nwg-emacsclient-wait" -e "${NWG_EMACSCLIENT}" -- "$org_url" </dev/null
+/usr/bin/open -a "$NWG_EMACS_APP"

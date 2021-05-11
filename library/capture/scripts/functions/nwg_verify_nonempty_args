@@ -1,6 +1,6 @@
 #!/usr/bin/env zsh
 
-verify_nonempty_args() {
+nwg_verify_nonempty_args() {
     if [ $1 -lt $2 ]; then return 1; fi
     for arg in "$3"; do
         [ -n "$arg" ] || { return 1; }
@@ -9,4 +9,4 @@ verify_nonempty_args() {
     return 0
 }
 
-verify_nonempty_args "$@"
+nwg_verify_nonempty_args "$@"
