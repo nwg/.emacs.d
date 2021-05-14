@@ -13,3 +13,4 @@ semanticdb/
 straight/*
 !straight/versions
 *~
+org-clock-save.el
