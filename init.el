@@ -319,45 +319,6 @@
      (local-set-key (kbd "S-s-<down>") 'next-line)))
   )
 
-;; (use-package org-journal
-;;   :straight t
-;;   :after org
-;;   :bind
-;;   ("C-c j" . org-journal-new-entry)
-;;   ;; ("C-c j d" . org-journal-new-date-entry)
-;;   ;; ("C-c j s" . org-journal-new-scheduled-entry)
-;;   :config
-;;   (defun org-journal-find-location ()
-;;     ;; Open today's journal, but specify a non-nil prefix argument in order to
-;;     ;; inhibit inserting the heading; org-capture will insert the heading.
-;;     (org-journal-new-entry t)
-;;     (unless (eq org-journal-file-type 'daily)
-;;       (org-narrow-to-subtree))
-;;     (goto-char (point-max)))
-
-  ;; (setq org-journal-dir journal-dir
-  ;;       org-journal-date-format "%A, %d %B %Y")
-  ;; (setq org-journal-file-format "%Y%m%d.org")
-
-
-;;   (setq org-icalendar-store-UID t
-;;         org-icalendar-include-todo "all"
-;;         org-icalendar-combined-agenda-file "~/Dropbox/emacs/org-agenda.ics")
-
-;;   (with-eval-after-load 'org-capture
-;;     (setq
-;;      org-capture-templates
-;;      (append org-capture-templates
-;;              '(("e" "Email Journal Entry" plain (function org-journal-find-location)
-;;                 "** %(format-time-string org-journal-time-format)%^{Title}\n    %?%i\n    %a"
-;;                 :jump-to-captured t)
-;;                ("j" "Journal Entry" plain (function org-journal-find-location)
-;;                 "** %(format-time-string org-journal-time-format)%^{Title}\n    %i%i\n    %a"
-;;                 :jump-to-captured t)
-;;                ))))
-
-;;   )
-
 (use-package all-the-icons
   :straight t)
 
@@ -384,9 +345,6 @@
                           (registers . 5)))
 
   (dashboard-setup-startup-hook))
-
-;; (with-eval-after-load 'org
-;;   (require 'org-journal))
 
 (require 'org-protocol)
 (server-start)
