@@ -30,6 +30,12 @@
 (use-package f
   :straight t)
 
+; Call setter function if available; don't use the customization automatic edit system
+(defmacro csetq (variable value)
+  `(funcall (or (get ',variable 'custom-set)
+                'set-default)
+            ',variable ,value))
+
 ; Mac OS X Cmd-click maps to middle mouse
 (when (eq system-type 'darwin)
   (define-key key-translation-map (kbd "<s-mouse-1>") (kbd "<mouse-2>")))
@@ -183,12 +189,6 @@
 
   )
 
-(defun open-message-link (message-id)
-  (browse-url-default-macosx-browser
-   (concat
-    "message:"
-    (org-link-encode message-id '(?\< ?\>)))))
-
 (setq notes-files
       (directory-files-recursively notes-dir "\\.org$"))
 
@@ -202,34 +202,25 @@
 
 (use-package org
   :straight t
+  :custom
+  (org-adapt-indentation t)
+  (org-hide-leading-stars t)
+  (org-id-link-to-org-use-id t)
+  (org-complete-tags-always-offer-all-agenda-tags t)
+  (org-agenda-include-diary t)
+  (org-log-done 'time)
+  (org-clock-in-resume t)
+  (org-agenda-window-setup 'current-window)
+  (org-agenda-files notes-files)
+  (org-refile-targets (quote ((org-agenda-files :tag . "org_refile_target"))))
+  (org-clock-persist t)
+  (org-cycle-emulate-tab 'white)
+  (org-support-shift-select t)
+  (org-directory org-dir)
+  (org-default-notes-file unfiled-file)
+  (org-indent-indentation-per-level 2)
+
   :config
-
-  (setq org-id-link-to-org-use-id t)
-  (setq org-complete-tags-always-offer-all-agenda-tags t)
-  (setq org-agenda-include-diary t)
-  (setq org-log-done 'time)
-  (setq org-clock-in-resume t)
-
-  (setq org-agenda-window-setup 'current-window)
-
-  (setq org-agenda-files notes-files)
-
-  (setq org-refile-targets (quote ((org-agenda-files :tag . "org_refile_target"))))
-
-  (defun nwg/org-agenda-mode-setup ()
-    ;; Always hilight the current agenda line
-    (hl-line-mode 1))
-
-  (add-hook 'org-agenda-mode-hook #'nwg/org-agenda-mode-setup 'append)
-
-  ;; The following custom-set-faces create the highlights
-  ;; (customize-set-variable 'org-id-link-to-org-use-id t)
-  ;; (customize-set-variable 'org-complete-tags-always-offer-all-agenda-tags t)
-
-  (setq org-clock-persist t)
-  (org-clock-persistence-insinuate)
-
-  (org-add-link-type "message" 'open-message-link)
 
   (global-set-key (kbd "C-c l") 'org-store-link)
   (global-set-key (kbd "C-c a") 'org-agenda)
@@ -237,29 +228,64 @@
   (global-set-key (kbd "C-c C-x g") 'org-agenda-clock-goto)
   (global-set-key (kbd "C-c C-x C-j") 'org-clock-goto)
 
-  (setq org-cycle-emulate-tab 'white)
-  (setq org-support-shift-select t)
+  (org-clock-persistence-insinuate)
 
-  (setq org-directory org-dir)
-  (setq org-default-notes-file unfiled-file)
+  (csetq org-bookmark-names-plist
+         (quote (:last-capture "Last Org Capture"
+                 :last-refile "Last Org Refile"
+                 :last-capture-marker "Last Org Capture Marker")))
 
-  (setq org-indent-indentation-per-level 2)
+  (csetq org-capture-templates
+         (quote (("t" "todo" entry (file org-default-notes-file)
+                  "\n* TODO %?\n  %U\n  Context: %a\n" :clock-in t :clock-resume t :exit "log-todo-to-journal")
+                 ("r" "respond" entry (file default-notes-file)
+                  "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
+                 ("n" "note" entry (file org-default-notes-file)
+                  "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
+                 ("j" "Journal" entry (file+olp+datetree journal-file)
+                  "* %?\n%(nwg/I)Context: %a\n%(nwg/I)%U\n" :clock-in t :clock-resume t)
+                 ("w" "org-protocol" entry (file org-default-notes-file)
+                  "* TODO Review %c\n%U\n" :immediate-finish t)
+                 ("m" "Meeting" entry (file org-default-notes-file)
+                  "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t)
+                 ("p" "Phone call" entry (file org-default-notes-file)
+                  "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
+                 ("h" "Habit" entry (file org-default-notes-file)
+                  "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n:END:\n"))))
+
+  (defun nwg/org-agenda-mode-setup ()
+    ;; Always hilight the current agenda line
+    (hl-line-mode 1))
+
+  (add-hook 'org-agenda-mode-hook #'nwg/org-agenda-mode-setup 'append)
+
+  (defun open-message-link (message-id)
+    (browse-url-default-macosx-browser
+     (concat
+      "message:"
+      (org-link-encode message-id '(?\< ?\>)))))
+
+  (org-add-link-type "message" 'open-message-link)
 
   (defun nwg/I ()
     "  ")
 
-  (defun nwg/clocked-in-entry (clock-link)
+  (defun nwg/fmt-clk (clock-link)
     (if org-clock-current-task
-       (format "%sCurrent Task: %s\n" (nwg/I) clock-link)
+        (format "%sCurrent Task: %s\n" (nwg/I) clock-link)
       ""))
 
+  ;; Set up post-capture actions in nwg-exit-templates-alist
+  ;; car of each item be pointed to by custom `:exit` property in normal
+  ;; org-capture-templates
   (let ((post-todo '(entry (file+olp+datetree journal-file)
-                           "* Created new TODO: %a\n%(nwg/clocked-in-entry \"%K\")%(nwg/I)%U\n"
+                           "* Created new TODO: %a\n%(nwg/fmt-clk \"%K\")%(nwg/I)%U\n"
                            :immediate-finish t)))
 
     (setq nwg-exit-templates-alist
           `(("log-todo-to-journal" . ,post-todo))))
 
+  ;; Handling for :exit property
   (defun nwg/capture-finalize ()
     (let* ((template (assoc-default nwg/last-capture-quit nwg-exit-templates-alist)))
       (when (and (not org-note-abort) template)
@@ -276,47 +302,7 @@
   (add-hook 'org-capture-before-finalize-hook #'nwg/capture-before-finalize)
   (add-hook 'org-capture-after-finalize-hook #'nwg/capture-finalize)
 
-  (setq org-capture-templates
-        (quote (("t" "todo" entry (file org-default-notes-file)
-                 "\n* TODO %?\n  %U\n  Context: %a\n" :clock-in t :clock-resume t :exit "log-todo-to-journal")
-                ("r" "respond" entry (file default-notes-file)
-                 "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
-                ("n" "note" entry (file org-default-notes-file)
-                 "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
-                ("j" "Journal" entry (file+olp+datetree journal-file)
-                 "* %?\n%(nwg/I)Context: %a\n%(nwg/I)%U\n" :clock-in t :clock-resume t)
-                ("w" "org-protocol" entry (file org-default-notes-file)
-                 "* TODO Review %c\n%U\n" :immediate-finish t)
-                ("m" "Meeting" entry (file org-default-notes-file)
-                 "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t)
-                ("p" "Phone call" entry (file org-default-notes-file)
-                 "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
-                ("h" "Habit" entry (file org-default-notes-file)
-                 "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n:END:\n"))))
 
-  (setq org-adapt-indentation t
-        org-hide-leading-stars t)
-
-  (setq org-bookmark-names-plist
-        '(last-capture "Last Org Capture"
-          last-refile "Last Org Refile"
-          last-capture-marker "Last Org Capture Marker"))
-
-  (add-hook
-   'org-src-mode-hook
-   (lambda ()
-     (message "Entering src")
-     (electric-indent-local-mode -1)
-     (setq-local tab-always-indent nil)))
-
-  (add-hook
-   'org-mode-hook
-   (lambda ()
-     (message "Entering org")
-     (electric-indent-local-mode 1)
-     (setq-local tab-always-indent t)
-
-     (local-set-key (kbd "S-s-<down>") 'next-line)))
   )
 
 (use-package all-the-icons
