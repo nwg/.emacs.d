@@ -300,10 +300,12 @@
   (global-set-key (kbd "C-c l") 'org-store-link)
   (global-set-key (kbd "C-c a") 'org-agenda)
   (global-set-key (kbd "C-c c") 'org-capture)
-  (global-set-key (kbd "C-c C-x g") 'org-agenda-clock-goto)
   (global-set-key (kbd "C-c C-x C-j") 'org-clock-goto)
 
-  (define-key org-mode-map (kbd "C-c C-q") #'counsel-org-tag))
+  (define-key org-mode-map (kbd "C-c C-q") #'counsel-org-tag)
+
+  (with-eval-after-load 'org-agenda
+    (define-key org-agenda-mode-map (kbd "C-c C-q") #'counsel-org-tag-agenda))
 
   (org-clock-persistence-insinuate)
 
