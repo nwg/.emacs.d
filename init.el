@@ -32,8 +32,8 @@
 (use-package f
   :straight t)
 
-(use-package nwg-util
-  :load-path "library/nwg-util/lisp")
+(add-to-list 'load-path (f-join user-emacs-directory "library/nwg-util/lisp"))
+(require 'nwg-util)
 
 ; Mac OS X Cmd-click maps to middle mouse
 (when (eq system-type 'darwin)
@@ -59,7 +59,10 @@
 (setq unfiled-dir (f-join notes-dir "Unfiled"))
 (setq unfiled-file (f-join unfiled-dir "Unfiled.org"))
 (setq org-dir (f-join documents-dir "Org"))
-                                        ;(require 'cons)
+
+(setq notes-files
+      (directory-files-recursively notes-dir "\\.org$"))
+
 ;; (setq
 ;;  'display-buffer-alist
 ;;  (append
@@ -91,36 +94,13 @@
 (global-set-key (kbd "C-x C-g") #'minibuffer-keyboard-quit)
 (global-set-key (kbd "C-x r R") #'counsel-recentf)
 
-
 ; Quick Keys for some common files
 (global-set-key (kbd "C-h H") (lambda () (interactive) (switch-to-buffer "*Help*")))
 (global-set-key (kbd "C-M-s-<return>") (lambda () (interactive) (load-file user-init-file)))
 (global-set-key (kbd "M-s-\\") (lambda () (interactive) (find-file user-init-file)))
 (global-set-key (kbd "C-c C-j") (lambda () (interactive) (find-file journal-file)))
-
-(defun newline-and-indent-relative ()
-  (interactive)
-  (newline)
-  (delete-horizontal-space)
-  (indent-relative-first-indent-point))
-
-(defun untab ()
-  (interactive)
-  (indent-rigidly (- tab-width)))
-
-(defun move-buffer-to-previous-frame ()
-  "Move a newly opened buffer to the most-recently-used buffer"
-  (interactive)
-  (let* ((sw (selected-window))
-         (pw (get-mru-window nil nil t))
-         (buf (current-buffer)))
-    (switch-to-prev-buffer sw nil)
-    (set-window-buffer pw buf t)
-    (select-window pw nil)))
-
-(global-set-key (kbd "C-x r R") 'recentf-open-files)
 (global-set-key (kbd "C-x w o") 'window-swap-states)
-(global-set-key (kbd "C-x w -") 'move-buffer-to-previous-frame)
+(global-set-key (kbd "C-x w -") #'nwg/move-buffer-to-previous-frame)
 
 ; Recent file keys
 (cl-loop for i from 0 to 9
@@ -194,12 +174,9 @@
   (setq TeX-parse-self t)
   (setq preview-auto-cache-preamble t)
   (setq-default TeX-master nil)
-  (setq-default TeX-newline-function 'newline-and-indent-relative)
+  (setq-default TeX-newline-function #'nwg/newline-and-indent-relative)
 
   )
-
-(setq notes-files
-      (directory-files-recursively notes-dir "\\.org$"))
 
 (use-package org
   :straight t
@@ -278,6 +255,7 @@
         (format "%sCurrent Task: %s\n" (nwg/I) clock-link)
       ""))
 
+  (nwg/install-org-capture-exit-option)
   ;; Set up post-capture actions in nwg-exit-templates-alist
   ;; car of each item be pointed to by custom `:exit` property in normal
   ;; org-capture-templates
@@ -287,24 +265,6 @@
 
     (setq nwg-exit-templates-alist
           `(("log-todo-to-journal" . ,post-todo))))
-
-  ;; Handling for :exit property
-  (defun nwg/capture-finalize ()
-    (let* ((template (assoc-default nwg/last-capture-quit nwg-exit-templates-alist)))
-      (when (and (not org-note-abort) template)
-        (with-current-buffer (marker-buffer org-capture-last-stored-marker)
-          (save-excursion
-            (goto-char (marker-position org-capture-last-stored-marker))
-
-            (let ((org-capture-templates (list (append (list "*" "Automatic") template))))
-              (org-capture nil "*")))))))
-
-  (defun nwg/capture-before-finalize ()
-    (setq nwg/last-capture-quit (org-capture-get :exit t)))
-
-  (add-hook 'org-capture-before-finalize-hook #'nwg/capture-before-finalize)
-  (add-hook 'org-capture-after-finalize-hook #'nwg/capture-finalize)
-
 
   )
 

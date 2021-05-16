@@ -1,3 +1,18 @@
+(defun nwg/newline-and-indent-relative ()
+  (interactive)
+  (newline)
+  (delete-horizontal-space)
+  (indent-relative-first-indent-point))
+
+(defun nwg/move-buffer-to-previous-frame ()
+  "Move a newly opened buffer to the most-recently-used buffer"
+  (interactive)
+  (let* ((sw (selected-window))
+         (pw (get-mru-window nil nil t))
+         (buf (current-buffer)))
+    (switch-to-prev-buffer sw nil)
+    (set-window-buffer pw buf t)
+    (select-window pw nil)))
 
 (defun nwg/switch-to-minibuffer ()
   "Switch to minibuffer window."
