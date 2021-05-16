@@ -32,6 +32,9 @@
 (use-package f
   :straight t)
 
+(use-package nwg-util
+  :load-path "library/nwg-util/lisp")
+
 ; Call setter function if available; don't use the customization automatic edit system
 (defmacro csetq (variable value)
   `(funcall (or (get ',variable 'custom-set)
@@ -73,42 +76,13 @@
 ;;       (inhibit-same-window . t))))))
 
 
-;; Show project in title
-;; Note -- this is the wrong way to do this
-;; I am just demonstrating debugging
-(defun nwg/get-backtrace ()
-  (with-temp-buffer
-    (let ((standard-output (current-buffer)))
-      (backtrace)
-      (buffer-string))))
-
-(defun nwg/banner (label content &optional pcf)
-  (print (format "------------ begin %s ------------" label) pcf)
-  (print content pcf)
-  (print (format "------------ end %s ------------" label) pcf))
-
-(defun nwg/safe-debugger (&rest debugger-args)
-  (let ((label "nwg/safe-debugger stack")
-        (bt (nwg/get-backtrace)))
-    (nwg/banner label bt 'external-debugging-output)
-    (nwg/banner label bt t)))
-
-(defun nwg/run-safe (c)
-  (let ((debug-on-error t)
-        (debugger #'nwg/safe-debugger))
-    (condition-case e
-        (progn
-          (funcall c)
-          'success)
-      ((debug error) 'fail))))
-
-(defmacro minorp (sym)
-  (let* ((sym-mode-s (concat (symbol-name sym) "-mode"))
-         (sym-mode (intern sym-mode-s)))
-    `(and (boundp ',sym-mode) ',sym-mode)))
-
-(defun mytest ()
-  (nwg/run-safe (lambda () (error "hi"))))
+(defun nwg/switch-to-minibuffer ()
+  "Switch to minibuffer window."
+  (interactive)
+  (let ((w (active-minibuffer-window)))
+    (if w
+        (select-window w)
+      (error "Minibuffer is not active"))))
 
 (defun nwg/current-project-name ()
   (or
@@ -138,8 +112,9 @@
 (defun nwg/window-configuration-change ()
   (nwg/run-safe #'nwg/setup-title))
 
-(add-hook 'buffer-list-update-hook #'nwg/buffer-list-update 'append)
-(add-hook 'window-configuration-change-hook #'nwg/window-configuration-change'append)
+(with-eval-after-load 'projectile
+  (add-hook 'buffer-list-update-hook #'nwg/buffer-list-update 'append)
+  (add-hook 'window-configuration-change-hook #'nwg/window-configuration-change'append))
 
 ; Opens current buffer in a window under current mouse position
 (defun open-current-buffer-in-selection ()
@@ -154,11 +129,14 @@
         (switch-to-buffer buf)))))
 
 (global-set-key (kbd "C-x w <mouse-1>") (open-current-buffer-in-selection))
+(global-set-key (kbd "C-x C-<return>") #'nwg/switch-to-minibuffer)
+(global-set-key (kbd "C-x C-g") #'minibuffer-keyboard-quit)
+
 
 ; Quick Keys for some common files
 (global-set-key (kbd "C-h H") (lambda () (interactive) (switch-to-buffer "*Help*")))
 (global-set-key (kbd "C-M-s-<return>") (lambda () (interactive) (load-file user-init-file)))
-(global-set-key (kbd "M-s-<return>") (lambda () (interactive) (find-file user-init-file)))
+(global-set-key (kbd "M-s-\\") (lambda () (interactive) (find-file user-init-file)))
 (global-set-key (kbd "C-c C-j") (lambda () (interactive) (find-file journal-file)))
 
 (defun newline-and-indent-relative ()
@@ -193,6 +171,8 @@
 
 (use-package ivy
   :straight t
+  :custom
+  (ivy-height 20 "Taller ivy")
   :config
   (ivy-mode 1)
 
@@ -296,7 +276,6 @@
   (org-refile-use-outline-path 'file "Show file and full node paths for refiling")
   (org-refile-allow-creating-parent-nodes 'confirm "Autocreate parents with confirmation")
   :config
-
   (global-set-key (kbd "C-c l") 'org-store-link)
   (global-set-key (kbd "C-c a") 'org-agenda)
   (global-set-key (kbd "C-c c") 'org-capture)
