@@ -1,4 +1,12 @@
 (require 'nwg-debug)
+(require 'nwg-ui)
+(require 'nwg-org)
+
+; Call setter function if available; don't use the customization automatic edit system
+(defmacro csetq (variable value)
+  `(funcall (or (get ',variable 'custom-set)
+                'set-default)
+            ',variable ,value))
 
 (defmacro minorp (sym)
   (let* ((sym-mode-s (concat (symbol-name sym) "-mode"))

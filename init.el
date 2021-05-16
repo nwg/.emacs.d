@@ -35,12 +35,6 @@
 (use-package nwg-util
   :load-path "library/nwg-util/lisp")
 
-; Call setter function if available; don't use the customization automatic edit system
-(defmacro csetq (variable value)
-  `(funcall (or (get ',variable 'custom-set)
-                'set-default)
-            ',variable ,value))
-
 ; Mac OS X Cmd-click maps to middle mouse
 (when (eq system-type 'darwin)
   (define-key key-translation-map (kbd "<s-mouse-1>") (kbd "<mouse-2>")))
@@ -76,30 +70,6 @@
 ;;       (inhibit-same-window . t))))))
 
 
-(defun nwg/switch-to-minibuffer ()
-  "Switch to minibuffer window."
-  (interactive)
-  (let ((w (active-minibuffer-window)))
-    (if w
-        (select-window w)
-      (error "Minibuffer is not active"))))
-
-(defun nwg/current-project-name ()
-  (or
-   (and (minorp projectile) (projectile-project-name))
-   "-"))
-
-(defun nwg/project-file-name ()
-  (and buffer-file-name
-       (minorp projectile)
-       (file-relative-name buffer-file-name (projectile-project-root))))
-
-(defun nwg/command-error-function (data context caller)
-  (message "Got uncaught error %s %s %s" data context caller)
-  (let ((standard-output 'external-debugging-output))
-    (print (format "Uncaught error: %s %s %s" data context caller)))
-  (command-error-default-function data context caller))
-
 (setq command-error-function #'nwg/command-error-function)
 
 (defun nwg/setup-title ()
@@ -116,21 +86,10 @@
   (add-hook 'buffer-list-update-hook #'nwg/buffer-list-update 'append)
   (add-hook 'window-configuration-change-hook #'nwg/window-configuration-change'append))
 
-; Opens current buffer in a window under current mouse position
-(defun open-current-buffer-in-selection ()
-  (lambda ()
-    (interactive)
-
-    (let ((buf (window-buffer))
-          (window (window-at (cadr (mouse-position))
-                              (cddr (mouse-position))
-                              (car (mouse-position)))))
-      (with-selected-window window
-        (switch-to-buffer buf)))))
-
-(global-set-key (kbd "C-x w <mouse-1>") (open-current-buffer-in-selection))
+(global-set-key (kbd "C-x w <mouse-1>") #'nwg/open-current-buffer-in-selection)
 (global-set-key (kbd "C-x C-<return>") #'nwg/switch-to-minibuffer)
 (global-set-key (kbd "C-x C-g") #'minibuffer-keyboard-quit)
+(global-set-key (kbd "C-x r R") #'counsel-recentf)
 
 
 ; Quick Keys for some common files
@@ -242,14 +201,6 @@
 (setq notes-files
       (directory-files-recursively notes-dir "\\.org$"))
 
-(defun nwg/find-note ()
-  (interactive)
-  (nwg/ivy-read-custom-display
-   #'file-name-nondirectory
-   "Note: "
-   notes-files
-   :action #'find-file :caller 'nwg/find-note))
-
 (use-package org
   :straight t
   :custom
@@ -317,13 +268,7 @@
 
   (add-hook 'org-agenda-mode-hook #'nwg/org-agenda-mode-setup 'append)
 
-  (defun open-message-link (message-id)
-    (browse-url-default-macosx-browser
-     (concat
-      "message:"
-      (org-link-encode message-id '(?\< ?\>)))))
-
-  (org-add-link-type "message" 'open-message-link)
+  (nwg/install-custom-org-links)
 
   (defun nwg/I ()
     "  ")
