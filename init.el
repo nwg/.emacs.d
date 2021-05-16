@@ -303,6 +303,8 @@
   (global-set-key (kbd "C-c C-x g") 'org-agenda-clock-goto)
   (global-set-key (kbd "C-c C-x C-j") 'org-clock-goto)
 
+  (define-key org-mode-map (kbd "C-c C-q") #'counsel-org-tag))
+
   (org-clock-persistence-insinuate)
 
   (csetq org-bookmark-names-plist
