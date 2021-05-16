@@ -75,19 +75,10 @@
 
 (setq command-error-function #'nwg/command-error-function)
 
-(defun nwg/setup-title ()
-  (let* ((fn (or (nwg/project-file-name) "%b")))
-    (setq frame-title-format (format "%s :: %s" (nwg/current-project-name) fn))))
-
-(defun nwg/buffer-list-update ()
-  (nwg/run-safe #'nwg/setup-title))
-
-(defun nwg/window-configuration-change ()
-  (nwg/run-safe #'nwg/setup-title))
-
-(with-eval-after-load 'projectile
-  (add-hook 'buffer-list-update-hook #'nwg/buffer-list-update 'append)
-  (add-hook 'window-configuration-change-hook #'nwg/window-configuration-change'append))
+(setq frame-title-format
+      `((:eval (nwg/current-project-name))
+        " :: "
+        (:eval (or (nwg/project-file-name) (buffer-name)))))
 
 (global-set-key (kbd "C-x w <mouse-1>") #'nwg/open-current-buffer-in-selection)
 (global-set-key (kbd "C-x C-<return>") #'nwg/switch-to-minibuffer)
