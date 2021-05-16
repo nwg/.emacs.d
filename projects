@@ -1,3 +1,4 @@
 ;;; -*- lisp-data -*-
-(("~/.emacs.d/straight/repos/org/")
- ("~/.emacs.d/"))
+(("~/.emacs.d/straight/repos/swiper/")
+ ("~/.emacs.d/")
+ ("~/.emacs.d/straight/repos/org/"))

@@ -1,12 +1,14 @@
 ;; -*- mode: emacs-lisp; lexical-binding: t; -*-
 
+(setq debug-on-error t)
+
 (require 'cl-lib)
 
 (let ((my-path (expand-file-name "/Library/TeX/texbin:/opt/local/bin")))
   (setenv "PATH" (concat my-path ":" (getenv "PATH")))
   (add-to-list 'exec-path my-path))
 
-;; straight.el setup
+;; --- begin straight.el setup
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
@@ -24,7 +26,7 @@
   (load bootstrap-file nil 'nomessage))
 
 (straight-use-package 'use-package)
-;; end straight.el setup
+;; --- end straight.el setup
 
 ; Some support packages needed by package setup
 (use-package f
@@ -70,6 +72,74 @@
 ;;        ;; display-buffer-pop-up-window)
 ;;       (inhibit-same-window . t))))))
 
+
+;; Show project in title
+;; Note -- this is the wrong way to do this
+;; I am just demonstrating debugging
+(defun nwg/get-backtrace ()
+  (with-temp-buffer
+    (let ((standard-output (current-buffer)))
+      (backtrace)
+      (buffer-string))))
+
+(defun nwg/banner (label content &optional pcf)
+  (print (format "------------ begin %s ------------" label) pcf)
+  (print content pcf)
+  (print (format "------------ end %s ------------" label) pcf))
+
+(defun nwg/safe-debugger (&rest debugger-args)
+  (let ((label "nwg/safe-debugger stack")
+        (bt (nwg/get-backtrace)))
+    (nwg/banner label bt 'external-debugging-output)
+    (nwg/banner label bt t)))
+
+(defun nwg/run-safe (c)
+  (let ((debug-on-error t)
+        (debugger #'nwg/safe-debugger))
+    (condition-case e
+        (progn
+          (funcall c)
+          'success)
+      ((debug error) 'fail))))
+
+(defmacro minorp (sym)
+  (let* ((sym-mode-s (concat (symbol-name sym) "-mode"))
+         (sym-mode (intern sym-mode-s)))
+    `(and (boundp ',sym-mode) ',sym-mode)))
+
+(defun mytest ()
+  (nwg/run-safe (lambda () (error "hi"))))
+
+(defun nwg/current-project-name ()
+  (or
+   (and (minorp projectile) (projectile-project-name))
+   "-"))
+
+(defun nwg/project-file-name ()
+  (and buffer-file-name
+       (minorp projectile)
+       (file-relative-name buffer-file-name (projectile-project-root))))
+
+(defun nwg/command-error-function (data context caller)
+  (message "Got uncaught error %s %s %s" data context caller)
+  (let ((standard-output 'external-debugging-output))
+    (print (format "Uncaught error: %s %s %s" data context caller)))
+  (command-error-default-function data context caller))
+
+(setq command-error-function #'nwg/command-error-function)
+
+(defun nwg/setup-title ()
+  (let* ((fn (or (nwg/project-file-name) "%b")))
+    (setq frame-title-format (format "%s :: %s" (nwg/current-project-name) fn))))
+
+(defun nwg/buffer-list-update ()
+  (nwg/run-safe #'nwg/setup-title))
+
+(defun nwg/window-configuration-change ()
+  (nwg/run-safe #'nwg/setup-title))
+
+(add-hook 'buffer-list-update-hook #'nwg/buffer-list-update 'append)
+(add-hook 'window-configuration-change-hook #'nwg/window-configuration-change'append)
 
 ; Opens current buffer in a window under current mouse position
 (defun open-current-buffer-in-selection ()
@@ -209,17 +279,22 @@
   (org-complete-tags-always-offer-all-agenda-tags t)
   (org-agenda-include-diary t)
   (org-log-done 'time)
-  (org-clock-in-resume t)
+  (org-clock-in-resume t "Just resume open clock on explicit clock in (normally does resolve)")
   (org-agenda-window-setup 'current-window)
   (org-agenda-files notes-files)
-  (org-refile-targets (quote ((org-agenda-files :tag . "org_refile_target"))))
   (org-clock-persist t)
   (org-cycle-emulate-tab 'white)
   (org-support-shift-select t)
   (org-directory org-dir)
   (org-default-notes-file unfiled-file)
   (org-indent-indentation-per-level 2)
+  (org-refile-targets '((nil :maxlevel . 9) ; nil means local
+                        (org-agenda-files :maxlevel . 9))
+                      "Local and all agenda headings up to level 9")
 
+  (org-outline-path-complete-in-steps nil "Ivy seems broken when steps on")
+  (org-refile-use-outline-path 'file "Show file and full node paths for refiling")
+  (org-refile-allow-creating-parent-nodes 'confirm "Autocreate parents with confirmation")
   :config
 
   (global-set-key (kbd "C-c l") 'org-store-link)
@@ -305,6 +380,15 @@
 
   )
 
+(use-package projectile
+  :straight t
+  :config
+  (projectile-mode +1)
+  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+
+)
+
 (use-package all-the-icons
   :straight t)
 
@@ -312,7 +396,6 @@
   :straight t
   :after all-the-icons
   :config
-  (message "Org: %s %s" (featurep 'org) (featurep 'org-agenda))
   (setq dashboard-banner-logo-title "Nate's Emacs")
   (setq dashboard-set-navigator t)
   (dashboard-modify-heading-icons '((recents . "file-text")))
@@ -328,6 +411,7 @@
   (setq dashboard-items '((bookmarks . 5)
                           (recents  . 5)
                           (agenda . 5)
+                          (projects . 5)
                           (registers . 5)))
 
   (dashboard-setup-startup-hook))
