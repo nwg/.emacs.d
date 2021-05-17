@@ -8,7 +8,7 @@ usage () {
     echo "$0 <sender> <subject> <apple-mail-url>"
 }
 
-verify_nonempty_args $# 3 "$@" || { usage; exit 1; }
+nwg_verify_nonempty_args $# 3 "$@" || { usage; exit 1; }
 
 template="$NWG_CAPTURE_EMAIL_TEMPLATE"
 local -A replacements

@@ -88,7 +88,7 @@
 ; Quick Keys for some common files
 (global-set-key (kbd "C-h H") (lambda () (interactive) (switch-to-buffer "*Help*")))
 (global-set-key (kbd "C-M-s-<return>") (lambda () (interactive) (load-file user-init-file)))
-(global-set-key (kbd "M-s-\\") (lambda () (interactive) (find-file user-init-file)))
+(global-set-key (kbd "M-s-<return>") (lambda () (interactive) (find-file user-init-file)))
 (global-set-key (kbd "C-c C-j") (lambda () (interactive) (find-file journal-file)))
 (global-set-key (kbd "C-x w o") 'window-swap-states)
 (global-set-key (kbd "C-x w -") #'nwg/move-buffer-to-previous-frame)
@@ -98,6 +98,21 @@
       do (let ((keys (format "C-x r %d" i))
                (sym (format "recentf-open-most-recent-file-%d" i)))
            (global-set-key (kbd keys) (intern sym))))
+
+(use-package prescient
+  :straight t)
+
+(use-package ivy-prescient
+  :straight t
+  :custom
+  (ivy-prescient-retain-classic-highlighting t "Use the old ivy highlighting style")
+  :config
+  (ivy-prescient-mode 1))
+
+(use-package company-prescient
+  :straight t
+  :config
+  (company-prescient-mode 1))
 
 (use-package ivy
   :straight t
@@ -121,7 +136,8 @@
   )
 
 (use-package counsel
-  :straight t)
+  :straight t
+  :bind (("C-x r m" . counsel-bookmark)))
 
 (use-package solarized-theme
   :straight t
@@ -145,10 +161,23 @@
                 "\\|" "^.+\\~$"
                 ))
 
-  (add-hook 'dired-mode-hook
-            (lambda ()
-              (dired-omit-mode 1)))
-  )
+  (defun nwg/dired-new-file ()
+    (interactive)
+    (let* ((fn "New File")
+           (buf (generate-new-buffer fn)))
+      (switch-to-buffer buf)))
+
+  (defun nwg/dired-new-file-2 ()
+    (interactive)
+    (let* ((buf (current-buffer)))
+      (call-interactively #'find-file)))
+
+  (define-key dired-mode-map (kbd "n") #'nwg/dired-new-file-2)
+
+  (defun nwg/setup-dired ()
+    (dired-omit-mode 1))
+
+  (add-hook 'dired-mode-hook #'nwg/setup-dired))
 
 (use-package racket-mode
   :straight t
@@ -199,8 +228,20 @@
   (global-set-key (kbd "C-c a") 'org-agenda)
   (global-set-key (kbd "C-c c") 'org-capture)
   (global-set-key (kbd "C-c C-x C-j") 'org-clock-goto)
+  (global-set-key (kbd "C-c C-w") 'org-refile)
 
   (define-key org-mode-map (kbd "C-c C-q") #'counsel-org-tag)
+
+  (defun nwg/org-jump-to-content ()
+    (interactive)
+    (deactivate-mark t)
+    (let ((start (point)))
+      (org-next-visible-heading 1)
+      (whitespace-cleanup-region start (point)))
+    (open-line 1)
+    (org-indent-line))
+
+  (define-key org-mode-map (kbd "C-c o") #'nwg/org-jump-to-content)
 
   (with-eval-after-load 'org-agenda
     (define-key org-agenda-mode-map (kbd "C-c C-q") #'counsel-org-tag-agenda))
@@ -214,21 +255,23 @@
 
   (csetq org-capture-templates
          (quote (("t" "todo" entry (file org-default-notes-file)
-                  "\n* TODO %?\n  %U\n  Context: %a\n" :clock-in t :clock-resume t :exit "log-todo-to-journal")
+                  "\n* TODO %?\n%(II)%U\%(II)Context: %a\n" :clock-in t :clock-resume t :exit "log-todo-to-journal")
                  ("r" "respond" entry (file default-notes-file)
-                  "* NEXT Respond to %:from on %:subject\nSCHEDULED: %t\n%U\n%a\n" :clock-in t :clock-resume t :immediate-finish t)
+                  "* NEXT Respond to %:from on %:subject\n%(II)SCHEDULED: %t\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t :immediate-finish t)
                  ("n" "note" entry (file org-default-notes-file)
-                  "* %? :NOTE:\n%U\n%a\n" :clock-in t :clock-resume t)
+                  "* %? :note:\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t)
+                 ("e" "email" entry (file org-default-notes-file)
+                  "* %? :email:\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t)
                  ("j" "Journal" entry (file+olp+datetree journal-file)
-                  "* %?\n%(nwg/I)Context: %a\n%(nwg/I)%U\n" :clock-in t :clock-resume t)
+                  "* %?\n%(II)Context: %a\n%(II)%U\n" :clock-in t :clock-resume t)
                  ("w" "org-protocol" entry (file org-default-notes-file)
-                  "* TODO Review %c\n%U\n" :immediate-finish t)
+                  "* TODO Review %c\n%(II)%U\n" :immediate-finish t)
                  ("m" "Meeting" entry (file org-default-notes-file)
-                  "* MEETING with %? :MEETING:\n%U" :clock-in t :clock-resume t)
+                  "* MEETING with %? :MEETING:\n%(II)%U" :clock-in t :clock-resume t)
                  ("p" "Phone call" entry (file org-default-notes-file)
-                  "* PHONE %? :PHONE:\n%U" :clock-in t :clock-resume t)
+                  "* PHONE %? :PHONE:\n%(II)%U" :clock-in t :clock-resume t)
                  ("h" "Habit" entry (file org-default-notes-file)
-                  "* NEXT %?\n%U\n%a\nSCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n:PROPERTIES:\n:STYLE: habit\n:REPEAT_TO_STATE: NEXT\n:END:\n"))))
+                  "* NEXT %?\n%(II)%U\n%(II)%a\n%(II)SCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n%(II):PROPERTIES:\n%(II):STYLE: habit\n%(II):REPEAT_TO_STATE: NEXT\n%(II):END:\n"))))
 
   (defun nwg/org-agenda-mode-setup ()
     ;; Always hilight the current agenda line
@@ -238,8 +281,7 @@
 
   (nwg/install-custom-org-links)
 
-  (defun nwg/I ()
-    "  ")
+  (defun II () "  ")
 
   (defun nwg/fmt-clk (clock-link)
     (if org-clock-current-task
