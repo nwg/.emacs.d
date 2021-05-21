@@ -1,12 +1,8 @@
 ;; -*- mode: emacs-lisp; lexical-binding: t; -*-
 
-(setq debug-on-error t)
+(setq debug-on-error nil)
 
 (require 'cl-lib)
-
-(let ((my-path (expand-file-name "/Library/TeX/texbin:/opt/local/bin")))
-  (setenv "PATH" (concat my-path ":" (getenv "PATH")))
-  (add-to-list 'exec-path my-path))
 
 ;; --- begin straight.el setup
 (defvar bootstrap-version)
@@ -33,7 +29,16 @@
   :straight t)
 
 (add-to-list 'load-path (f-join user-emacs-directory "library/nwg-util/lisp"))
-(require 'nwg-util)
+(use-package nwg-util
+  :demand t)
+
+(when (featurep 'init)
+  (load-library "nwg-util"))
+
+(nwg/reset-path-to-user-profile)
+(let ((additions '("/Library/TeX/texbin" "/opt/local/bin")))
+  (nwg/add-to-path-env additions)
+  (nwg/add-to-exec-path additions))
 
 ; Mac OS X Cmd-click maps to middle mouse
 (when (eq system-type 'darwin)
@@ -60,8 +65,30 @@
 (setq unfiled-file (f-join unfiled-dir "Unfiled.org"))
 (setq org-dir (f-join documents-dir "Org"))
 
-(setq notes-files
-      (directory-files-recursively notes-dir "\\.org$"))
+(setq nwg/org-file-re "\\.org$")
+(setq nwg/backup-file-re "^#\\.")
+
+(fset #'backup-filep (compose (curry #'s-matches\? nwg/backup-file-re) #'f-filename))
+
+(fset #'orgs-recursively
+      (compose
+       (curry #'cl-remove-if #'backup-filep)
+       (rcurry #'directory-files-recursively nwg/org-file-re)))
+
+(setq notes-files (orgs-recursively notes-dir))
+
+(defun nwg/after-save-hook ()
+  (if (and
+       (f-ancestor-of\? notes-dir buffer-file-name)
+       (s-matches\? nwg/org-file-re buffer-file-name)
+       (not (member buffer-file-name notes-files)))
+      (progn
+        (message "adding %s to notes-files and updating org-agenda-files" buffer-file-name)
+        (add-to-list 'notes-files buffer-file-name)
+        (when (featurep 'org)
+          (setq org-agenda-files notes-files)))))
+
+(add-hook 'after-save-hook #'nwg/after-save-hook)
 
 ;; (setq
 ;;  'display-buffer-alist
@@ -87,8 +114,8 @@
 
 ; Quick Keys for some common files
 (global-set-key (kbd "C-h H") (lambda () (interactive) (switch-to-buffer "*Help*")))
-(global-set-key (kbd "C-M-s-<return>") (lambda () (interactive) (load-file user-init-file)))
-(global-set-key (kbd "M-s-<return>") (lambda () (interactive) (find-file user-init-file)))
+(global-set-key (kbd "C-M-s-\\") (lambda () (interactive) (load-file user-init-file)))
+(global-set-key (kbd "C-M-\\") (lambda () (interactive) (find-file user-init-file)))
 (global-set-key (kbd "C-c C-j") (lambda () (interactive) (find-file journal-file)))
 (global-set-key (kbd "C-x w o") 'window-swap-states)
 (global-set-key (kbd "C-x w -") #'nwg/move-buffer-to-previous-frame)
@@ -98,21 +125,6 @@
       do (let ((keys (format "C-x r %d" i))
                (sym (format "recentf-open-most-recent-file-%d" i)))
            (global-set-key (kbd keys) (intern sym))))
-
-(use-package prescient
-  :straight t)
-
-(use-package ivy-prescient
-  :straight t
-  :custom
-  (ivy-prescient-retain-classic-highlighting t "Use the old ivy highlighting style")
-  :config
-  (ivy-prescient-mode 1))
-
-(use-package company-prescient
-  :straight t
-  :config
-  (company-prescient-mode 1))
 
 (use-package ivy
   :straight t
@@ -137,7 +149,25 @@
 
 (use-package counsel
   :straight t
+  :after ivy
   :bind (("C-x r m" . counsel-bookmark)))
+
+(use-package prescient
+  :straight t)
+
+(use-package ivy-prescient
+  :straight t
+  :after (ivy prescient)
+  :custom
+  (ivy-prescient-retain-classic-highlighting t "Use the old ivy highlighting style")
+  :config
+  (ivy-prescient-mode 1))
+
+(use-package company-prescient
+  :straight t
+  :after (company prescient)
+  :config
+  (company-prescient-mode 1))
 
 (use-package solarized-theme
   :straight t
@@ -182,7 +212,12 @@
 (use-package racket-mode
   :straight t
   :config
-  (add-hook 'racket-mode 'show-paren-mode)
+
+  (defun nwg/racket-mode ()
+    (show-paren-mode 1)
+    (racket-xp-mode 1))
+
+  (add-hook 'racket-mode-hook #'nwg/racket-mode)
   )
 
 (use-package tex
@@ -221,7 +256,7 @@
                       "Local and all agenda headings up to level 9")
 
   (org-outline-path-complete-in-steps nil "Ivy seems broken when steps on")
-  (org-refile-use-outline-path 'file "Show file and full node paths for refiling")
+  (org-refile-use-outline-path 'full-file-path "Show file and full node paths for refiling")
   (org-refile-allow-creating-parent-nodes 'confirm "Autocreate parents with confirmation")
   :config
   (global-set-key (kbd "C-c l") 'org-store-link)
@@ -231,6 +266,11 @@
   (global-set-key (kbd "C-c C-w") 'org-refile)
 
   (define-key org-mode-map (kbd "C-c C-q") #'counsel-org-tag)
+
+  (defun nwg/clock-in-prepare-hook ()
+    (org-id-get-create))
+
+  (add-hook 'org-clock-in-prepare-hook #'nwg/clock-in-prepare-hook)
 
   (defun nwg/org-jump-to-content ()
     (interactive)
@@ -285,7 +325,7 @@
 
   (defun nwg/fmt-clk (clock-link)
     (if org-clock-current-task
-        (format "%sCurrent Task: %s\n" (nwg/I) clock-link)
+        (format "%sCurrent Task: %s\n" (II) clock-link)
       ""))
 
   (nwg/install-org-capture-exit-option)
@@ -293,7 +333,7 @@
   ;; car of each item be pointed to by custom `:exit` property in normal
   ;; org-capture-templates
   (let ((post-todo '(entry (file+olp+datetree journal-file)
-                           "* Created new TODO: %a\n%(nwg/fmt-clk \"%K\")%(nwg/I)%U\n"
+                           "* Created new TODO: %a\n%(nwg/fmt-clk \"%K\")%(II)%U\n"
                            :immediate-finish t)))
 
     (setq nwg-exit-templates-alist
@@ -301,8 +341,16 @@
 
   )
 
+(use-package ripgrep
+  :straight t)
+
+(use-package projectile-ripgrep
+  :straight t
+  :after ripgrep)
+
 (use-package projectile
   :straight t
+  :after (projectile-ripgrep)
   :config
   (projectile-mode +1)
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
@@ -345,3 +393,5 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(org-mode-line-clock ((t (:background "grey75" :foreground "red" :box (:line-width -1 :style released-button))))))
+
+(provide 'init)
