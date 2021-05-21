@@ -36,7 +36,7 @@
   (load-library "nwg-util"))
 
 (nwg/reset-path-to-user-profile)
-(let ((additions '("/Library/TeX/texbin" "/opt/local/bin")))
+(let ((additions '("/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin")))
   (nwg/add-to-path-env additions)
   (nwg/add-to-exec-path additions))
 
@@ -212,10 +212,11 @@
 (use-package racket-mode
   :straight t
   :config
+  (require 'racket-xp)
 
   (defun nwg/racket-mode ()
-    (show-paren-mode 1)
-    (racket-xp-mode 1))
+    (racket-xp-mode 1)
+    (show-paren-mode 1))
 
   (add-hook 'racket-mode-hook #'nwg/racket-mode)
   )
