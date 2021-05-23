@@ -50,10 +50,26 @@
 (when (featurep 'init)
   (load-library "nwg-util"))
 
-(nwg/reset-path-to-user-profile)
-(let ((additions '("/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin")))
+
+
+;; Main Initialization
+
+;; Set up PATH and 'exec-path
+(let* ((profile-path (s-split (nwg/user-profile-path) ":"))
+       (additions '("/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin"))
+       (prepend (append profile-path additions)))
   (nwg/add-to-path-env additions)
   (nwg/add-to-exec-path additions))
+
+;; Set up ibuffer
+;;  Switch to the "Standard" View on entry and collapse "Default"
+(defun nwg/ibuffer-mode()
+  (message "Here")
+  (ibuffer-switch-to-saved-filter-groups "Standard")
+  (setq ibuffer-hidden-filter-groups (list "Default"))
+  (ibuffer-update nil t))
+
+(add-hook 'ibuffer-mode-hook #'nwg/ibuffer-mode)
 
 ; Mac OS X Cmd-click maps to middle mouse
 (when (eq system-type 'darwin)
@@ -384,7 +400,7 @@
   :straight t
   :after (projectile-ripgrep)
   :custom
-  (projectile-tags-backend xref "Always use xref. Projectile prefers ggtags by default but it supports xref, anyway")
+  (projectile-tags-backend 'xref "Always use xref. Projectile prefers ggtags by default but it supports xref, anyway")
   :config
   (projectile-mode +1)
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
@@ -435,6 +451,50 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(ibuffer-saved-filter-groups
+   '(("With Programming"
+      ("Programming"
+       (saved . "programming")))
+     ("Standard"
+      ("Modified"
+       (visiting-file)
+       (modified))
+      ("Programmnig"
+       (saved . "programming")))))
+ '(ibuffer-saved-filters
+   '(("programming"
+      (or
+       (derived-mode . prog-mode)
+       (mode . ess-mode)
+       (mode . compilation-mode)))
+     ("text document"
+      (and
+       (derived-mode . text-mode)
+       (not
+        (starred-name))))
+     ("TeX"
+      (or
+       (derived-mode . tex-mode)
+       (mode . latex-mode)
+       (mode . context-mode)
+       (mode . ams-tex-mode)
+       (mode . bibtex-mode)))
+     ("web"
+      (or
+       (derived-mode . sgml-mode)
+       (derived-mode . css-mode)
+       (mode . javascript-mode)
+       (mode . js2-mode)
+       (mode . scss-mode)
+       (derived-mode . haml-mode)
+       (mode . sass-mode)))
+     ("gnus"
+      (or
+       (mode . message-mode)
+       (mode . mail-mode)
+       (mode . gnus-group-mode)
+       (mode . gnus-summary-mode)
+       (mode . gnus-article-mode)))))
  '(safe-local-variable-values
    '((eval setq-local racket-program
            (f-join

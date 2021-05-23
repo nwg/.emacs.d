@@ -32,9 +32,8 @@
   (let ((bt (nwg/get-backtrace)))
     (nwg/banner label bt t)0))
 
-(defun nwg/reset-path-to-user-profile ()
-  (let* ((path-from-profile (shell-command-to-string ". $HOME/.profile; echo $PATH")))
-    (setenv "PATH" path-from-profile)))
+(defun nwg/user-profile-path ()
+  (shell-command-to-string ". $HOME/.profile; echo $PATH"))
 
 (defun nwg/prepend-if-missing (candidates list)
   (append
