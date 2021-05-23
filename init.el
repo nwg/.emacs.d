@@ -70,6 +70,7 @@
   (ibuffer-update nil t))
 
 (add-hook 'ibuffer-mode-hook #'nwg/ibuffer-mode)
+(global-set-key (kbd "C-x C-b") #'ibuffer)
 
 ; Mac OS X Cmd-click maps to middle mouse
 (when (eq system-type 'darwin)
@@ -452,14 +453,11 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(ibuffer-saved-filter-groups
-   '(("With Programming"
-      ("Programming"
-       (saved . "programming")))
-     ("Standard"
+   '(("Standard"
       ("Modified"
        (visiting-file)
        (modified))
-      ("Programmnig"
+      ("Programming"
        (saved . "programming")))))
  '(ibuffer-saved-filters
    '(("programming"
