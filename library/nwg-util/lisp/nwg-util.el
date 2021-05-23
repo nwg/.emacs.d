@@ -42,12 +42,14 @@
    list))
 
 (defun nwg/add-to-path-env (candidates)
-  (let* ((path (split-string (getenv "PATH") ":"))
-         (my-path (nwg/prepend-if-missing candidates path)))
+  (let* ((expanded-candidates (mapcar #'expand-file-name candidates))
+         (path (split-string (getenv "PATH") ":"))
+         (my-path (nwg/prepend-if-missing expanded-candidates path)))
     (setenv "PATH" (s-join ":" my-path))))
 
 (defun nwg/add-to-exec-path (candidates)
-  (let* ((my-exec-path (nwg/prepend-if-missing candidates (symbol-value 'exec-path))))
+  (let* ((expanded-candidates (mapcar #'expand-file-name candidates))
+         (my-exec-path (nwg/prepend-if-missing expanded-candidates (symbol-value 'exec-path))))
     (setq exec-path my-exec-path)))
 
 (provide 'nwg-util)

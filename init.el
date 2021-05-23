@@ -1,6 +1,7 @@
 ;; -*- mode: emacs-lisp; lexical-binding: t; -*-
 
-(setq debug-on-error nil)
+;; (setq debug-on-error t)
+;; (setq debug-ignored-errors nil)
 
 (require 'cl-lib)
 
@@ -23,6 +24,20 @@
 
 (straight-use-package 'use-package)
 ;; --- end straight.el setup
+
+
+
+(defun nwg/isearch-quick-return ()
+  (interactive)
+  (isearch-done)
+  (let ((fn (or (local-key-binding (kbd "<return>")) (local-key-binding (kbd "RET")))))
+    (when fn
+      (funcall fn))))
+
+; Quick isearch <return>
+(define-key isearch-mode-map (kbd "M-<return>") #'nwg/isearch-quick-return)
+(define-key isearch-mode-map (kbd "M-RET") #'nwg/isearch-quick-return)
+(global-set-key (kbd "C-M-s-m") #'describe-mode)
 
 ; Some support packages needed by package setup
 (use-package f
@@ -126,6 +141,20 @@
                (sym (format "recentf-open-most-recent-file-%d" i)))
            (global-set-key (kbd keys) (intern sym))))
 
+(use-package ggtags
+  :straight t)
+
+;; (use-package geiser
+;;   :straight t
+;;   :after geiser-chez
+;;   :custom
+;;   (geiser-active-implementations (chez)))
+
+;; (use-package geiser-chez
+;;   :straight t
+;;   :custom
+;;   (geiser-chez-binary "chezscheme"))
+
 (use-package ivy
   :straight t
   :custom
@@ -150,7 +179,8 @@
 (use-package counsel
   :straight t
   :after ivy
-  :bind (("C-x r m" . counsel-bookmark)))
+  :bind (("C-x r m" . counsel-bookmark)
+         ("C-x r l" . counsel-bookmark)))
 
 (use-package prescient
   :straight t)
@@ -206,8 +236,12 @@
 
   (add-hook 'dired-mode-hook #'nwg/setup-dired))
 
+(require 'dired-x)
+
 (use-package racket-mode
   :straight t
+  :custom
+  (racket-program "/Users/griswold/project/racket/racket/bin/racket")
   :config
   (require 'racket-xp)
 
@@ -349,6 +383,8 @@
 (use-package projectile
   :straight t
   :after (projectile-ripgrep)
+  :custom
+  (projectile-tags-backend xref "Always use xref. Projectile prefers ggtags by default but it supports xref, anyway")
   :config
   (projectile-mode +1)
   (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
@@ -381,7 +417,8 @@
                           (projects . 5)
                           (registers . 5)))
 
-  (dashboard-setup-startup-hook))
+  (dashboard-setup-startup-hook)
+)
 
 (require 'org-protocol)
 (server-start)
@@ -398,4 +435,9 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(safe-local-variable-values '((racket-user-command-line-arguments "-I" "racket"))))
+ '(safe-local-variable-values
+   '((eval setq-local racket-program
+           (f-join
+            (projectile-project-root)
+            "racket/bin/racket"))
+     (racket-user-command-line-arguments "-I" "racket"))))
