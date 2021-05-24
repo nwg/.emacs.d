@@ -101,19 +101,24 @@
 (setq nwg/org-file-re "\\.org$")
 (setq nwg/backup-file-re "^#\\.")
 
-(fset #'backup-filep (compose (curry #'s-matches\? nwg/backup-file-re) #'f-filename))
+(fset #'backup-file-p (compose (curry #'s-matches\? nwg/backup-file-re) #'f-filename))
 
 (fset #'orgs-recursively
       (compose
-       (curry #'cl-remove-if #'backup-filep)
+       (curry #'cl-remove-if #'backup-file-p)
        (rcurry #'directory-files-recursively nwg/org-file-re)))
 
 (setq notes-files (orgs-recursively notes-dir))
 
+(defun nwg/notes-file-p (fn)
+  (and
+   (f-ancestor-of\? notes-dir fn)
+   (s-matches\? nwg/org-file-re fn)
+   (not (s-matches\? nwg/backup-file-re fn))))
+
 (defun nwg/after-save-hook ()
-  (if (and
-       (f-ancestor-of\? notes-dir buffer-file-name)
-       (s-matches\? nwg/org-file-re buffer-file-name)
+  (when (and
+       (nwg/notes-file-p buffer-file-name)
        (not (member buffer-file-name notes-files)))
       (progn
         (message "adding %s to notes-files and updating org-agenda-files" buffer-file-name)
@@ -356,7 +361,7 @@
   (csetq org-capture-templates
          (quote (("t" "todo" entry (file org-default-notes-file)
                   "\n* TODO %?\n%(II)%U%(II)Context: %a\n" :clock-in t :clock-resume t :exit finish-todo)
-                 ("r" "respond" entry (file default-notes-file)
+                 ("r" "respond" entry (file org-default-notes-file)
                   "* NEXT Respond to %:from on %:subject\n%(II)SCHEDULED: %t\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t :immediate-finish t)
                  ("n" "note" entry (file org-default-notes-file)
                   "* %? :note:\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t :exit finish-note)
@@ -369,7 +374,7 @@
                  ("m" "Meeting" entry (file org-default-notes-file)
                   "* MEETING with %? :MEETING:\n%(II)%U" :clock-in t :clock-resume t)
                  ("p" "Phone call" entry (file org-default-notes-file)
-                  "* PHONE %? :PHONE:\n%(II)%U" :clock-in t :clock-resume t)
+                  "* PHONE %? :PHONE:\n%(II)%U" :clock-in t :clock-resume t :exit finish-phone)
                  ("h" "Habit" entry (file org-default-notes-file)
                   "* NEXT %?\n%(II)%U\n%(II)%a\n%(II)SCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n%(II):PROPERTIES:\n%(II):STYLE: habit\n%(II):REPEAT_TO_STATE: NEXT\n%(II):END:\n"))))
 
@@ -392,15 +397,15 @@
   ;; Set up post-capture actions in nwg-exit-templates-alist
   ;; car of each item be pointed to by custom `:exit` property in normal
   ;; org-capture-templates
-  (defun nwg/note-capture-entry (name)
+  (defun nwg/note-capture-entry (prefix)
     `(entry (file+olp+datetree journal-file)
-                           ,(format "* Created new %s: %%a\n%%(nwg/fmt-clk \"%%K\")%%(II)%%U\n" name)
+                           ,(format "* %s%%a\n%%(nwg/fmt-clk \"%%K\")%%(II)%%U\n" prefix)
                            :immediate-finish t))
 
   (setq nwg-exit-templates-alist
-        `((finish-todo . ,(nwg/note-capture-entry "TODO"))
-          (finish-note . ,(nwg/note-capture-entry "NOTE"))))
-
+        `((finish-todo . ,(nwg/note-capture-entry "Created new TODO: "))
+          (finish-note . ,(nwg/note-capture-entry "Created new NOTE: "))
+          (finish-phone . ,(nwg/note-capture-entry ""))))
   )
 
 (use-package ripgrep
@@ -469,6 +474,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(debug-on-error t)
  '(ibuffer-saved-filter-groups
    '(("Standard"
       ("Modified"

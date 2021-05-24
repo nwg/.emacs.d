@@ -15,7 +15,6 @@
           (goto-char (marker-position org-capture-last-stored-marker))
 
           (let ((org-capture-templates (list (append (list "*" "Automatic") template))))
-            (message "Using template %s" org-capture-templates)
             (org-capture nil "*")))))))
 
 (defun nwg/capture-before-finalize ()
