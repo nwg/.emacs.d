@@ -37,6 +37,7 @@
 ; Quick isearch <return>
 (define-key isearch-mode-map (kbd "M-<return>") #'nwg/isearch-quick-return)
 (define-key isearch-mode-map (kbd "M-RET") #'nwg/isearch-quick-return)
+(define-key isearch-mode-map (kbd "s-h") #'isearch-repeat-forward)
 (global-set-key (kbd "C-M-s-m") #'describe-mode)
 
 ; Some support packages needed by package setup
@@ -47,7 +48,7 @@
 (use-package nwg-util
   :demand t)
 
-(when (featurep 'init)
+(when (featurep 'nwg-util)
   (load-library "nwg-util"))
 
 
@@ -122,6 +123,16 @@
 
 (add-hook 'after-save-hook #'nwg/after-save-hook)
 
+(defun nwg/recentf-exclude-org ()
+  (message "excluding org files from recentf")
+  (setq-local recentf-exclude '("\\.org")))
+
+(defun nwg/print-find-info ()
+  (message "finding file with recentf-exclude %s" recentf-exclude))
+
+(add-hook 'org-agenda-mode-hook #'nwg/recentf-exclude-org)
+(add-hook 'dashboard-mode-hook #'nwg/recentf-exclude-org)
+(add-hook 'find-file-hook #'nwg/print-find-info)
 ;; (setq
 ;;  'display-buffer-alist
 ;;  (append
@@ -148,7 +159,7 @@
 (global-set-key (kbd "C-h H") (lambda () (interactive) (switch-to-buffer "*Help*")))
 (global-set-key (kbd "C-M-s-\\") (lambda () (interactive) (load-file user-init-file)))
 (global-set-key (kbd "C-M-\\") (lambda () (interactive) (find-file user-init-file)))
-(global-set-key (kbd "C-c C-j") (lambda () (interactive) (find-file journal-file)))
+(global-set-key (kbd "C-c j") (lambda () (interactive) (org-capture '(4) "j")))
 (global-set-key (kbd "C-x w o") 'window-swap-states)
 (global-set-key (kbd "C-x w -") #'nwg/move-buffer-to-previous-frame)
 
@@ -344,11 +355,11 @@
 
   (csetq org-capture-templates
          (quote (("t" "todo" entry (file org-default-notes-file)
-                  "\n* TODO %?\n%(II)%U\%(II)Context: %a\n" :clock-in t :clock-resume t :exit "log-todo-to-journal")
+                  "\n* TODO %?\n%(II)%U%(II)Context: %a\n" :clock-in t :clock-resume t :exit finish-todo)
                  ("r" "respond" entry (file default-notes-file)
                   "* NEXT Respond to %:from on %:subject\n%(II)SCHEDULED: %t\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t :immediate-finish t)
                  ("n" "note" entry (file org-default-notes-file)
-                  "* %? :note:\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t)
+                  "* %? :note:\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t :exit finish-note)
                  ("e" "email" entry (file org-default-notes-file)
                   "* %? :email:\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t)
                  ("j" "Journal" entry (file+olp+datetree journal-file)
@@ -381,12 +392,14 @@
   ;; Set up post-capture actions in nwg-exit-templates-alist
   ;; car of each item be pointed to by custom `:exit` property in normal
   ;; org-capture-templates
-  (let ((post-todo '(entry (file+olp+datetree journal-file)
-                           "* Created new TODO: %a\n%(nwg/fmt-clk \"%K\")%(II)%U\n"
-                           :immediate-finish t)))
+  (defun nwg/note-capture-entry (name)
+    `(entry (file+olp+datetree journal-file)
+                           ,(format "* Created new %s: %%a\n%%(nwg/fmt-clk \"%%K\")%%(II)%%U\n" name)
+                           :immediate-finish t))
 
-    (setq nwg-exit-templates-alist
-          `(("log-todo-to-journal" . ,post-todo))))
+  (setq nwg-exit-templates-alist
+        `((finish-todo . ,(nwg/note-capture-entry "TODO"))
+          (finish-note . ,(nwg/note-capture-entry "NOTE"))))
 
   )
 
@@ -413,9 +426,12 @@
   :straight t)
 
 (use-package dashboard
-  :straight t
+  :straight (dashboard :type git :host github :repo "emacs-dashboard/emacs-dashboard")
   :after all-the-icons
+  :init
+  ;; (message "recentf-list=%s" recentf-list)
   :config
+  (message "startup recentf-list=%s" recentf-list)
   (setq dashboard-banner-logo-title "Nate's Emacs")
   (setq dashboard-set-navigator t)
   (dashboard-modify-heading-icons '((recents . "file-text")))
@@ -434,11 +450,12 @@
                           (projects . 5)
                           (registers . 5)))
 
-  (dashboard-setup-startup-hook)
+  (let ((recentf-exclude '("\\.org")))
+    (dashboard-setup-startup-hook))
 )
 
 (require 'org-protocol)
-(server-start)
+(unless (server-running-p) (server-start))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

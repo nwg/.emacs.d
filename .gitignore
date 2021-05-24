@@ -16,3 +16,4 @@ straight/*
 org-clock-save.el
 projectile-bookmarks.eld
 projects
+eln-cache/

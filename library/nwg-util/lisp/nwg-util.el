@@ -1,7 +1,12 @@
-(require 'nwg-debug)
-(require 'nwg-ui)
-(require 'nwg-org)
-(require 'nwg-curry-compose)
+(defmacro nwg-ensure (arg)
+  `(if (featurep ,arg)
+       (load-library (symbol-name ,arg))
+     (require ,arg)))
+
+(nwg-ensure 'nwg-debug)
+(nwg-ensure 'nwg-ui)
+(nwg-ensure 'nwg-org)
+(nwg-ensure 'nwg-curry-compose)
 
 ; Call setter function if available; don't use the customization automatic edit system
 (defmacro csetq (variable value)
