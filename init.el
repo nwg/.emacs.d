@@ -364,9 +364,9 @@
                  ("r" "respond" entry (file org-default-notes-file)
                   "* NEXT Respond to %:from on %:subject\n%(II)SCHEDULED: %t\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t :immediate-finish t)
                  ("n" "note" entry (file org-default-notes-file)
-                  "* %? :note:\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t :exit finish-note)
+                  "* %? :note:\n%(II)%U\n%(II)Context: %a\n" :clock-in t :clock-resume t :exit finish-note)
                  ("e" "email" entry (file org-default-notes-file)
-                  "* %? :email:\n%(II)%U\n%(II)%a\n" :clock-in t :clock-resume t)
+                  "* %? :email:\n%(II)%U\n%(II)Context: %a\n" :clock-in t :clock-resume t)
                  ("j" "Journal" entry (file+olp+datetree journal-file)
                   "* %?\n%(II)Context: %a\n%(II)%U\n" :clock-in t :clock-resume t)
                  ("w" "org-protocol" entry (file org-default-notes-file)
@@ -376,7 +376,7 @@
                  ("p" "Phone call" entry (file org-default-notes-file)
                   "* PHONE %? :PHONE:\n%(II)%U" :clock-in t :clock-resume t :exit finish-phone)
                  ("h" "Habit" entry (file org-default-notes-file)
-                  "* NEXT %?\n%(II)%U\n%(II)%a\n%(II)SCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n%(II):PROPERTIES:\n%(II):STYLE: habit\n%(II):REPEAT_TO_STATE: NEXT\n%(II):END:\n"))))
+                  "* NEXT %?\n%(II)%U\n%(II)Context: %a\n%(II)SCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n%(II):PROPERTIES:\n%(II):STYLE: habit\n%(II):REPEAT_TO_STATE: NEXT\n%(II):END:\n"))))
 
   (defun nwg/org-agenda-mode-setup ()
     ;; Always hilight the current agenda line
