@@ -26,20 +26,6 @@
 ;; --- end straight.el setup
 
 
-
-(defun nwg/isearch-quick-return ()
-  (interactive)
-  (isearch-done)
-  (let ((fn (or (local-key-binding (kbd "<return>")) (local-key-binding (kbd "RET")))))
-    (when fn
-      (funcall fn))))
-
-; Quick isearch <return>
-(define-key isearch-mode-map (kbd "M-<return>") #'nwg/isearch-quick-return)
-(define-key isearch-mode-map (kbd "M-RET") #'nwg/isearch-quick-return)
-(define-key isearch-mode-map (kbd "s-h") #'isearch-repeat-forward)
-(global-set-key (kbd "C-M-s-m") #'describe-mode)
-
 ; Some support packages needed by package setup
 (use-package f
   :straight t)
@@ -54,6 +40,22 @@
 
 
 ;; Main Initialization
+
+(setq custom-file (expand-file-name (f-join user-emacs-directory "custom.el")))
+(load-file custom-file)
+
+;; Quick isearch mode <return>
+(defun nwg/isearch-quick-return ()
+  (interactive)
+  (isearch-done)
+  (let ((fn (or (local-key-binding (kbd "<return>")) (local-key-binding (kbd "RET")))))
+    (when fn
+      (funcall fn))))
+
+(define-key isearch-mode-map (kbd "M-<return>") #'nwg/isearch-quick-return)
+(define-key isearch-mode-map (kbd "M-RET") #'nwg/isearch-quick-return)
+(define-key isearch-mode-map (kbd "s-h") #'isearch-repeat-forward)
+(global-set-key (kbd "C-M-s-m") #'describe-mode)
 
 ;; Set up PATH and 'exec-path
 (let* ((profile-path (s-split (nwg/user-profile-path) ":"))
@@ -80,7 +82,6 @@
 ; Highlight whitespace
 (setq-default whitespace-style '(face trailing tabs spaces))
 (global-auto-revert-mode t)
-(global-display-line-numbers-mode)
 (global-whitespace-mode 1)
 
 ; Indentation
@@ -103,12 +104,21 @@
 
 (fset #'backup-file-p (compose (curry #'s-matches\? nwg/backup-file-re) #'f-filename))
 
-(fset #'orgs-recursively
+(fset #'nwg/orgs-recursively
       (compose
        (curry #'cl-remove-if #'backup-file-p)
        (rcurry #'directory-files-recursively nwg/org-file-re)))
 
-(setq notes-files (orgs-recursively notes-dir))
+(setq notes-files (nwg/orgs-recursively notes-dir))
+
+(defun nwg/rescan-notes ()
+  (setq notes-files (nwg/orgs-recursively notes-dir))
+  (when (and (featurep 'org-agenda) (boundp 'org-agenda-files))
+    (message "Setting agenda files to %s" notes-files)
+    (setq org-agenda-files notes-files)
+    (message "Member = %s" (member "/Users/griswold/Documents/Notes/Network/ddwrt/r6400v2-flash.org" org-agenda-files))))
+
+(nwg/rescan-notes)
 
 (defun nwg/notes-file-p (fn)
   (and
@@ -116,7 +126,7 @@
    (s-matches\? nwg/org-file-re fn)
    (not (s-matches\? nwg/backup-file-re fn))))
 
-(defun nwg/after-save-hook ()
+(defun nwg/maybe-add-note ()
   (when (and
        (nwg/notes-file-p buffer-file-name)
        (not (member buffer-file-name notes-files)))
@@ -126,7 +136,8 @@
         (when (featurep 'org)
           (setq org-agenda-files notes-files)))))
 
-(add-hook 'after-save-hook #'nwg/after-save-hook)
+(add-hook 'after-save-hook #'nwg/rescan-notes)
+(add-hook 'find-file-hook #'nwg/rescan-notes)
 
 (defun nwg/recentf-exclude-org ()
   (message "excluding org files from recentf")
@@ -163,7 +174,7 @@
 ; Quick Keys for some common files
 (global-set-key (kbd "C-h H") (lambda () (interactive) (switch-to-buffer "*Help*")))
 (global-set-key (kbd "C-M-s-\\") (lambda () (interactive) (load-file user-init-file)))
-(global-set-key (kbd "C-M-\\") (lambda () (interactive) (find-file user-init-file)))
+(global-set-key (kbd "C-M-\\") (lambda () (interactive) (counsel-bookmark)))
 (global-set-key (kbd "C-c j") (lambda () (interactive) (org-capture '(4) "j")))
 (global-set-key (kbd "C-x w o") 'window-swap-states)
 (global-set-key (kbd "C-x w -") #'nwg/move-buffer-to-previous-frame)
@@ -460,65 +471,6 @@
 )
 
 (require 'org-protocol)
+(require 'server)
 (unless (server-running-p) (server-start))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(org-mode-line-clock ((t (:background "grey75" :foreground "red" :box (:line-width -1 :style released-button))))))
-
 (provide 'init)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(debug-on-error t)
- '(ibuffer-saved-filter-groups
-   '(("Standard"
-      ("Modified"
-       (visiting-file)
-       (modified))
-      ("Programming"
-       (saved . "programming")))))
- '(ibuffer-saved-filters
-   '(("programming"
-      (or
-       (derived-mode . prog-mode)
-       (mode . ess-mode)
-       (mode . compilation-mode)))
-     ("text document"
-      (and
-       (derived-mode . text-mode)
-       (not
-        (starred-name))))
-     ("TeX"
-      (or
-       (derived-mode . tex-mode)
-       (mode . latex-mode)
-       (mode . context-mode)
-       (mode . ams-tex-mode)
-       (mode . bibtex-mode)))
-     ("web"
-      (or
-       (derived-mode . sgml-mode)
-       (derived-mode . css-mode)
-       (mode . javascript-mode)
-       (mode . js2-mode)
-       (mode . scss-mode)
-       (derived-mode . haml-mode)
-       (mode . sass-mode)))
-     ("gnus"
-      (or
-       (mode . message-mode)
-       (mode . mail-mode)
-       (mode . gnus-group-mode)
-       (mode . gnus-summary-mode)
-       (mode . gnus-article-mode)))))
- '(safe-local-variable-values
-   '((eval setq-local racket-program
-           (f-join
-            (projectile-project-root)
-            "racket/bin/racket"))
-     (racket-user-command-line-arguments "-I" "racket"))))
