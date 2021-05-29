@@ -100,7 +100,7 @@
 (setq org-dir (f-join documents-dir "Org"))
 
 (setq nwg/org-file-re "\\.org$")
-(setq nwg/backup-file-re "^#\\.")
+(setq nwg/backup-file-re "^\\.#")
 
 (fset #'backup-file-p (compose (curry #'s-matches\? nwg/backup-file-re) #'f-filename))
 
