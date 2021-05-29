@@ -8,6 +8,15 @@
 (nwg-ensure 'nwg-org)
 (nwg-ensure 'nwg-curry-compose)
 
+
+;; Set up some common helpers
+
+(defmacro λ (args bcar &rest bcdr)
+  (append `(lambda ,args ,bcar) bcdr))
+
+(defun flatten (list-of-lists)
+  (apply #'append list-of-lists))
+
 ; Call setter function if available; don't use the customization automatic edit system
 (defmacro csetq (variable value)
   `(funcall (or (get ',variable 'custom-set)
@@ -37,23 +46,17 @@
   (let ((bt (nwg/get-backtrace)))
     (nwg/banner label bt t)0))
 
-(defun nwg/user-profile-path ()
-  (shell-command-to-string ". $HOME/.profile; echo $PATH"))
+(defun nwg/user-dot-profile-path ()
+  (s-split
+   ":"
+   (shell-command-to-string ". $HOME/.profile; echo $PATH")))
 
 (defun nwg/prepend-if-missing (candidates list)
   (append
    (cl-remove-if (rcurry #'member list) candidates)
    list))
 
-(defun nwg/add-to-path-env (candidates)
-  (let* ((expanded-candidates (mapcar #'expand-file-name candidates))
-         (path (split-string (getenv "PATH") ":"))
-         (my-path (nwg/prepend-if-missing expanded-candidates path)))
-    (setenv "PATH" (s-join ":" my-path))))
-
-(defun nwg/add-to-exec-path (candidates)
-  (let* ((expanded-candidates (mapcar #'expand-file-name candidates))
-         (my-exec-path (nwg/prepend-if-missing expanded-candidates (symbol-value 'exec-path))))
-    (setq exec-path my-exec-path)))
+(defun nwg/set-environment-path (members)
+  (setenv "PATH" (s-join ":" members)))
 
 (provide 'nwg-util)

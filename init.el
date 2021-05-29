@@ -37,8 +37,6 @@
 (when (featurep 'nwg-util)
   (load-library "nwg-util"))
 
-
-
 ;; Main Initialization
 
 (setq custom-file (expand-file-name (f-join user-emacs-directory "custom.el")))
@@ -47,27 +45,35 @@
 ;; Quick isearch mode <return>
 (defun nwg/isearch-quick-return ()
   (interactive)
-  (isearch-done)
+  (when isearch-mode (isearch-done))
   (let ((fn (or (local-key-binding (kbd "<return>")) (local-key-binding (kbd "RET")))))
     (when fn
       (funcall fn))))
 
 (define-key isearch-mode-map (kbd "M-<return>") #'nwg/isearch-quick-return)
 (define-key isearch-mode-map (kbd "M-RET") #'nwg/isearch-quick-return)
-(define-key isearch-mode-map (kbd "s-h") #'isearch-repeat-forward)
+
+; I use "s-F" and it has a bug (https://emacs.stackexchange.com/questions/64969/mac-os-and-possibly-other-guis-why-is-default-s-g-behaving-differently-from)
+
+(with-eval-after-load 'dired
+  (define-key dired-mode-map (kbd "M-<return>") #'nwg/isearch-quick-return)
+  (define-key dired-mode-map (kbd "M-RET") #'nwg/isearch-quick-return))
+
 (global-set-key (kbd "C-M-s-m") #'describe-mode)
 
+(when (not (featurep 'init))
+  (setq nwg/initial-profile-path (nwg/user-dot-profile-path)))
+
 ;; Set up PATH and 'exec-path
-(let* ((profile-path (s-split (nwg/user-profile-path) ":"))
-       (additions '("/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin"))
-       (prepend (append profile-path additions)))
-  (nwg/add-to-path-env additions)
-  (nwg/add-to-exec-path additions))
+(let* ((additions '("/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin"))
+       (new-environment-path (nwg/prepend-if-missing additions nwg/initial-profile-path))
+       (new-profile-path (nwg/prepend-if-missing additions exec-path)))
+  (nwg/set-environment-path new-environment-path)
+  (setq profile-path new-profile-path))
 
 ;; Set up ibuffer
 ;;  Switch to the "Standard" View on entry and collapse "Default"
 (defun nwg/ibuffer-mode()
-  (message "Here")
   (ibuffer-switch-to-saved-filter-groups "Standard")
   (setq ibuffer-hidden-filter-groups (list "Default"))
   (ibuffer-update nil t))
@@ -82,7 +88,6 @@
 ; Highlight whitespace
 (setq-default whitespace-style '(face trailing tabs spaces))
 (global-auto-revert-mode t)
-(global-whitespace-mode 1)
 
 ; Indentation
 (setq-default tab-always-indent nil)
@@ -113,10 +118,8 @@
 
 (defun nwg/rescan-notes ()
   (setq notes-files (nwg/orgs-recursively notes-dir))
-  (when (and (featurep 'org-agenda) (boundp 'org-agenda-files))
-    (message "Setting agenda files to %s" notes-files)
-    (setq org-agenda-files notes-files)
-    (message "Member = %s" (member "/Users/griswold/Documents/Notes/Network/ddwrt/r6400v2-flash.org" org-agenda-files))))
+  (when (featurep 'org-agenda)
+    (org-store-new-agenda-file-list notes-files)))
 
 (nwg/rescan-notes)
 
@@ -126,38 +129,29 @@
    (s-matches\? nwg/org-file-re fn)
    (not (s-matches\? nwg/backup-file-re fn))))
 
+(defun nwg/maybe-rescan-notes ()
+  (when (nwg/notes-file-p buffer-file-name)
+    (nwg/rescan-notes)))
+
 (defun nwg/maybe-add-note ()
   (when (and
-       (nwg/notes-file-p buffer-file-name)
-       (not (member buffer-file-name notes-files)))
-      (progn
-        (message "adding %s to notes-files and updating org-agenda-files" buffer-file-name)
-        (add-to-list 'notes-files buffer-file-name)
-        (when (featurep 'org)
-          (setq org-agenda-files notes-files)))))
+         (nwg/notes-file-p buffer-file-name)
+         (file-exists-p buffer-file-name)
+         (not (member buffer-file-name notes-files)))
+    (message "Adding note %s to notes and agenda" buffer-file-name)
+    (add-to-list 'notes-files buffer-file-name)
+    (when (featurep 'org)
+      (setq org-agenda-files notes-files))))
 
-(add-hook 'after-save-hook #'nwg/rescan-notes)
-(add-hook 'find-file-hook #'nwg/rescan-notes)
+(add-hook 'after-save-hook #'nwg/maybe-add-note)
+(add-hook 'find-file-hook #'nwg/maybe-add-note)
 
 (defun nwg/recentf-exclude-org ()
   (message "excluding org files from recentf")
   (setq-local recentf-exclude '("\\.org")))
 
-(defun nwg/print-find-info ()
-  (message "finding file with recentf-exclude %s" recentf-exclude))
-
 (add-hook 'org-agenda-mode-hook #'nwg/recentf-exclude-org)
 (add-hook 'dashboard-mode-hook #'nwg/recentf-exclude-org)
-(add-hook 'find-file-hook #'nwg/print-find-info)
-;; (setq
-;;  'display-buffer-alist
-;;  (append
-;;   display-buffer-alist
-;;   '(("^\\*Help\\*$" .
-;;      ((display-buffer-reuse-window)
-;;        ;; display-buffer-pop-up-window)
-;;       (inhibit-same-window . t))))))
-
 
 (setq command-error-function #'nwg/command-error-function)
 
@@ -174,16 +168,40 @@
 ; Quick Keys for some common files
 (global-set-key (kbd "C-h H") (lambda () (interactive) (switch-to-buffer "*Help*")))
 (global-set-key (kbd "C-M-s-\\") (lambda () (interactive) (load-file user-init-file)))
-(global-set-key (kbd "C-M-\\") (lambda () (interactive) (counsel-bookmark)))
+(global-set-key (kbd "C-s-\\") (lambda () (interactive) (counsel-bookmark)))
 (global-set-key (kbd "C-c j") (lambda () (interactive) (org-capture '(4) "j")))
 (global-set-key (kbd "C-x w o") 'window-swap-states)
 (global-set-key (kbd "C-x w -") #'nwg/move-buffer-to-previous-frame)
+
+(defun copy-current-sexp ()
+  (interactive)
+  (save-excursion
+    (let ((start (progn (backward-sexp) (pos)))
+          (end (progn (forward-sexp) (pos))))
+      (copy-region-as-kill start end))))
+
+; Some global bindings for text editing
+(global-set-key (kbd "C-^") (λ () (interactive) (delete-indentation 4))) ; Like M-^ but execute from top
 
 ; Recent file keys
 (cl-loop for i from 0 to 9
       do (let ((keys (format "C-x r %d" i))
                (sym (format "recentf-open-most-recent-file-%d" i)))
            (global-set-key (kbd keys) (intern sym))))
+
+(use-package lsp-mode
+  :straight t
+  :after (nix-mode)
+  :config
+
+  (add-to-list 'lsp-language-id-configuration '(nix-mode . "nix"))
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection '("rnix-lsp"))
+                    :major-modes '(nix-mode)
+                    :server-id 'nix)))
+
+(use-package nix-mode
+  :straight t)
 
 (use-package ggtags
   :straight t)
@@ -223,8 +241,7 @@
 (use-package counsel
   :straight t
   :after ivy
-  :bind (("C-x r m" . counsel-bookmark)
-         ("C-x r l" . counsel-bookmark)))
+  :bind (("C-x r m" . counsel-bookmark)))
 
 (use-package prescient
   :straight t)
@@ -320,7 +337,6 @@
   (org-log-done 'time)
   (org-clock-in-resume t "Just resume open clock on explicit clock in (normally does resolve)")
   (org-agenda-window-setup 'current-window)
-  (org-agenda-files notes-files)
   (org-clock-persist t)
   (org-cycle-emulate-tab 'white)
   (org-support-shift-select t)
@@ -342,6 +358,8 @@
   (global-set-key (kbd "C-c C-w") 'org-refile)
 
   (define-key org-mode-map (kbd "C-c C-q") #'counsel-org-tag)
+
+  (org-store-new-agenda-file-list notes-files)
 
   (defun nwg/clock-in-prepare-hook ()
     (org-id-get-create))
@@ -460,10 +478,10 @@
   (setq dashboard-center-content t)
   (global-set-key (kbd "C-M-s-SPC") (lambda () (interactive) (switch-to-buffer "*dashboard*")))
 
-  (setq dashboard-items '((bookmarks . 5)
+  (setq dashboard-items '((bookmarks . 10)
                           (recents  . 5)
                           (agenda . 5)
-                          (projects . 5)
+                          (projects . 7)
                           (registers . 5)))
 
   (let ((recentf-exclude '("\\.org")))
