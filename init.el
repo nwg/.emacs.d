@@ -500,7 +500,7 @@
     (goto-char (point-max))))
 
 (defun maybe-add-image ()
-  (unless (boundp 'nwg/did-add-image)
+  (unless (or (boundp 'nwg/did-add-image) (not window-system))
     (add-image)
     (setq nwg/did-add-image t)))
 
