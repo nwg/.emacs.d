@@ -44,4 +44,13 @@
     (with-selected-window window
       (switch-to-buffer buf))))
 
+(defun nwg/insert-image (fn &optional properties)
+  (let* ((type (and (image-type-available-p 'imagemagick) 'imagemagick))
+         (spec (create-image fn type)))
+    (let ((begin (point)))
+      (insert-image spec)
+      (let ((end (point)))
+        (when properties
+          (add-text-properties begin end properties))))))
+
 (provide 'nwg-ui)

@@ -20,5 +20,5 @@ url=$3
 
 /usr/bin/open -ga "$NWG_EMACS_APP"
 org_url=$( nwg_make_capture_url "$template" "$url" "$title" "$body" )
-"${NWG_CAPTURE}/scripts/nwg-emacsclient-wait" -e "${NWG_EMACSCLIENT}" -- "$org_url" </dev/null
+"${NWG_CAPTURE}/scripts/nwg-emacsclient-wait" -e "${NWG_EMACSCLIENT}" -p "(require 'org-protocol)" -- "$org_url" </dev/null
 /usr/bin/open -a "$NWG_EMACS_APP"

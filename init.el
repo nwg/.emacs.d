@@ -39,6 +39,8 @@
 
 ;; Main Initialization
 
+(setq inhibit-splash-screen t)
+
 (setq custom-file (expand-file-name (f-join user-emacs-directory "custom.el")))
 (load-file custom-file)
 
@@ -67,9 +69,9 @@
 ;; Set up PATH and 'exec-path
 (let* ((additions '("/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin"))
        (new-environment-path (nwg/prepend-if-missing additions nwg/initial-profile-path))
-       (new-profile-path (nwg/prepend-if-missing additions exec-path)))
+       (new-exec-path (nwg/prepend-if-missing additions exec-path)))
   (nwg/set-environment-path new-environment-path)
-  (setq profile-path new-profile-path))
+  (setq exec-path new-exec-path))
 
 ;; Set up ibuffer
 ;;  Switch to the "Standard" View on entry and collapse "Default"
@@ -114,7 +116,7 @@
        (curry #'cl-remove-if #'backup-file-p)
        (rcurry #'directory-files-recursively nwg/org-file-re)))
 
-(setq notes-files (nwg/orgs-recursively notes-dir))
+(defvar notes-files (nwg/orgs-recursively notes-dir))
 
 (defun nwg/rescan-notes ()
   (setq notes-files (nwg/orgs-recursively notes-dir))
@@ -173,6 +175,8 @@
 (global-set-key (kbd "C-x w o") 'window-swap-states)
 (global-set-key (kbd "C-x w -") #'nwg/move-buffer-to-previous-frame)
 
+(global-set-key (kbd "s-k") #'erase-buffer)
+
 (defun copy-current-sexp ()
   (interactive)
   (save-excursion
@@ -204,18 +208,13 @@
   :straight t)
 
 (use-package ggtags
-  :straight t)
+  :straight t
+  :init
+  (defun enable-ggtags ()
+    (with-eval-after-load 'xref
+      (add-hook 'xref-backend-functions #'ggtags--xref-backend -10 t)))
 
-;; (use-package geiser
-;;   :straight t
-;;   :after geiser-chez
-;;   :custom
-;;   (geiser-active-implementations (chez)))
-
-;; (use-package geiser-chez
-;;   :straight t
-;;   :custom
-;;   (geiser-chez-binary "chezscheme"))
+  (add-hook 'prog-mode-hook #'enable-ggtags))
 
 (use-package ivy
   :straight t
@@ -484,11 +483,28 @@
                           (projects . 7)
                           (registers . 5)))
 
-  (let ((recentf-exclude '("\\.org")))
-    (dashboard-setup-startup-hook))
 )
 
-(require 'org-protocol)
+(defvar startup-scratch-banner "~/.emacs.d/tree.png")
+
+(defun add-image ()
+  (with-current-buffer (get-buffer "*scratch*")
+    (goto-char (point-min))
+    (nwg/insert-image startup-scratch-banner '(read-only t))
+    (insert "\n\n")
+    (goto-char (point-max))))
+
+(defun maybe-add-image ()
+  (unless (boundp 'nwg/did-add-image)
+    (add-image)
+    (setq nwg/did-add-image t)))
+
+(add-hook 'emacs-startup-hook #'maybe-add-image)
+
+;; (require 'org-protocol)
 (require 'server)
+
+;; (add-hook 'server-visit-hook (λ () (require 'org-protocol)) -90)
 (unless (server-running-p) (server-start))
 (provide 'init)
+(put 'erase-buffer 'disabled nil)
