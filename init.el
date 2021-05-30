@@ -38,7 +38,7 @@
   (load-library "nwg-util"))
 
 (defun sync-file (&rest args)
-  (apply #'f-join "sync" args))
+  (apply #'f-join user-emacs-directory "sync" args))
 
 ;; Main Initialization
 
