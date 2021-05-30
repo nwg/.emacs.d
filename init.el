@@ -42,7 +42,8 @@
 (setq inhibit-splash-screen t)
 
 (setq custom-file (expand-file-name (f-join user-emacs-directory "custom.el")))
-(load-file custom-file)
+(when (file-exists-p custom-file)
+  (load-file custom-file))
 
 ;; Quick isearch mode <return>
 (defun nwg/isearch-quick-return ()
@@ -116,14 +117,17 @@
        (curry #'cl-remove-if #'backup-file-p)
        (rcurry #'directory-files-recursively nwg/org-file-re)))
 
-(defvar notes-files (nwg/orgs-recursively notes-dir))
+(defun nwg/scan-notes-dir ()
+  (and
+   (file-directory-p notes-dir)
+   (nwg/orgs-recursively notes-dir)))
 
-(defun nwg/rescan-notes ()
-  (setq notes-files (nwg/orgs-recursively notes-dir))
+(defvar notes-files (nwg/scan-notes-dir))
+
+(defun nwg/setup-notes ()
+  (setq notes-files (nwg/scan-notes-dir))
   (when (featurep 'org-agenda)
     (org-store-new-agenda-file-list notes-files)))
-
-(nwg/rescan-notes)
 
 (defun nwg/notes-file-p (fn)
   (and
@@ -194,18 +198,18 @@
            (global-set-key (kbd keys) (intern sym))))
 
 (use-package lsp-mode
-  :straight t
-  :after (nix-mode)
-  :config
+  :straight t)
 
+(use-package nix-mode
+  :straight t
+  :after (lsp-mode)
+  :config
+  
   (add-to-list 'lsp-language-id-configuration '(nix-mode . "nix"))
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-stdio-connection '("rnix-lsp"))
                     :major-modes '(nix-mode)
                     :server-id 'nix)))
-
-(use-package nix-mode
-  :straight t)
 
 (use-package ggtags
   :straight t
@@ -262,7 +266,8 @@
 (use-package solarized-theme
   :straight t
   :config
-  (load-theme 'solarized-light t))
+  (when window-system
+    (load-theme 'solarized-light t)))
 
 (use-package dired-x
   :after dired
