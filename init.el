@@ -37,11 +37,19 @@
 (when (featurep 'nwg-util)
   (load-library "nwg-util"))
 
+(defun sync-file (&rest args)
+  (apply #'f-join "sync" args))
+
 ;; Main Initialization
 
 (setq inhibit-splash-screen t)
 
-(setq custom-file (expand-file-name (f-join user-emacs-directory "custom.el")))
+;; Recentf
+(setq recentf-save-file (sync-file "recentf"))
+(recentf-mode 1)
+
+;; Customization setup
+(setq custom-file (sync-file "custom.el"))
 (when (file-exists-p custom-file)
   (load-file custom-file))
 
@@ -197,6 +205,10 @@
                (sym (format "recentf-open-most-recent-file-%d" i)))
            (global-set-key (kbd keys) (intern sym))))
 
+(use-package bookmark
+  :custom
+  (bookmark-file (sync-file "bookmarks")))
+  
 (use-package lsp-mode
   :straight t)
 
