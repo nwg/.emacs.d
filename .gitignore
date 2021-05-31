@@ -19,3 +19,4 @@ projects
 eln-cache/
 custom.el
 sync
+.lsp-session-v1

@@ -167,8 +167,6 @@
 (add-hook 'org-agenda-mode-hook #'nwg/recentf-exclude-org)
 (add-hook 'dashboard-mode-hook #'nwg/recentf-exclude-org)
 
-(setq command-error-function #'nwg/command-error-function)
-
 (setq frame-title-format
       `((:eval (nwg/current-project-name))
         " :: "
@@ -216,6 +214,8 @@
   :straight t
   :after (lsp-mode)
   :config
+
+  (add-hook 'nix-mode-hook #'lsp)
   
   (add-to-list 'lsp-language-id-configuration '(nix-mode . "nix"))
   (lsp-register-client
