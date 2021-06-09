@@ -421,7 +421,13 @@
                  ("p" "Phone call" entry (file org-default-notes-file)
                   "* PHONE %? :PHONE:\n%(II)%U" :clock-in t :clock-resume t :exit finish-phone)
                  ("h" "Habit" entry (file org-default-notes-file)
-                  "* NEXT %?\n%(II)%U\n%(II)Context: %a\n%(II)SCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n%(II):PROPERTIES:\n%(II):STYLE: habit\n%(II):REPEAT_TO_STATE: NEXT\n%(II):END:\n"))))
+                  "* NEXT %?\n%(II)%U\n%(II)Context: %a\n%(II)SCHEDULED: %(format-time-string \"%<<%Y-%m-%d %a .+1d/3d>>\")\n%(II):PROPERTIES:\n%(II):STYLE: habit\n%(II):REPEAT_TO_STATE: NEXT\n%(II):END:\n")
+                 ("L" "Link" entry (file org-default-notes-file)
+                  "* %? :web:\n%(II)%U\n%(II)Link: %a\n" :clock-in t :clock-resume t)
+                 ("S" "Link Selected" entry (file org-default-notes-file)
+                  "* %? :web:\n%(II)%U\n%(II)Link: %a\n%(II)#+BEGIN_QUOTE\n%(II)%i\n%(II)#+END_QUOTE\n" :clock-in t :clock-resume t)
+                                        ;"* %? :web:\n%(II)%U\n%(II)Link: %a\n%i\n"
+                 )))
 
   (defun nwg/org-agenda-mode-setup ()
     ;; Always hilight the current agenda line
