@@ -5,7 +5,7 @@
     (org-link-encode message-id '(?\< ?\>)))))
 
 (defun nwg/install-custom-org-links ()
-  (org-add-link-type "message" 'open-message-link))
+  (org-add-link-type "message" 'nwg/open-message-link))
 
 (defun nwg/capture-finalize ()
   (when (not org-note-abort)
