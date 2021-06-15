@@ -64,6 +64,10 @@
 (recentf-mode 1)
 
 ;; Customization setup
+(setq custom-git-file (f-join user-emacs-directory "custom-git.el"))
+(when (file-exists-p custom-file)
+  (load-file custom-file))
+
 (setq custom-file (sync-file "custom.el"))
 (when (file-exists-p custom-file)
   (load-file custom-file))
