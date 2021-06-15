@@ -76,9 +76,10 @@
   (setq nwg/initial-profile-path (nwg/user-dot-profile-path)))
 
 ;; Set up PATH and 'exec-path
-(let* ((additions '("/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin"))
-       (new-environment-path (nwg/prepend-if-missing additions nwg/initial-profile-path))
-       (new-exec-path (nwg/prepend-if-missing additions exec-path)))
+(let* ((additions '("~/.nix-profile/bin" "~/.local/bin" "/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin"))
+       (additions-expanded (mapcar #'expand-file-name additions))
+       (new-environment-path (nwg/prepend-if-missing additions-expanded nwg/initial-profile-path))
+       (new-exec-path (nwg/prepend-if-missing additions-expanded exec-path)))
   (nwg/set-environment-path new-environment-path)
   (setq exec-path new-exec-path))
 
@@ -206,17 +207,26 @@
 (use-package bookmark
   :custom
   (bookmark-file (sync-file "bookmarks")))
-  
+
 (use-package lsp-mode
   :straight t)
 
 (use-package nix-mode
   :straight t
   :after (lsp-mode)
+  :bind (:map nix-mode-map ("M-'" . #'nix-doc))
   :config
 
+  (defun nix-doc (&optional key)
+    (interactive)
+    (let ((key (or
+                key
+                (and (called-interactively-p 'any) (prompt-current-word "nix-doc: "))
+                (error "Cannot determine key"))))
+      (shell-command (format "nix-doc %s" key))))
+
   (add-hook 'nix-mode-hook #'lsp)
-  
+
   (add-to-list 'lsp-language-id-configuration '(nix-mode . "nix"))
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-stdio-connection '("rnix-lsp"))
@@ -309,7 +319,7 @@
   (define-key dired-mode-map (kbd "n") #'nwg/dired-new-file)
 
   (defun nwg/setup-dired ()
-    (dired-omit-mode 1))
+    (dired-omit-mode -1))
 
   (add-hook 'dired-mode-hook #'nwg/setup-dired))
 

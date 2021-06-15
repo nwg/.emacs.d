@@ -59,4 +59,9 @@
 (defun nwg/set-environment-path (members)
   (setenv "PATH" (s-join ":" members)))
 
+(defun prompt-current-word (prompt)
+  (interactive)
+  (let* ((word (thing-at-point 'word)))
+    (read-from-minibuffer prompt word)))
+
 (provide 'nwg-util)
