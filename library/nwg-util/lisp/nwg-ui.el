@@ -1,3 +1,16 @@
+(defun nwg/enable-parens ()
+  (setq show-paren-delay 0)
+  (set-face-foreground 'show-paren-mismatch "red")
+  (set-face-attribute 'show-paren-mismatch nil
+                      :weight 'bold :underline t :overline nil :slant 'normal)
+
+  (set-face-background 'show-paren-match "#aaaaaa")
+  (set-face-attribute 'show-paren-match nil
+                      :weight 'bold :underline nil :overline nil :slant 'normal)
+
+  (show-paren-mode t)
+  (setq-local show-paren-style 'expression))
+
 (defun nwg/newline-and-indent-relative ()
   (interactive)
   (newline)
