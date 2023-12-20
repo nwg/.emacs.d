@@ -25,6 +25,12 @@
 (when (file-exists-p custom-file)
   (load-file custom-file))
 
+(use-package solarized-theme
+  :straight t
+  :config
+  (when window-system
+    (load-theme 'solarized-light t)))
+
 (use-package tuareg
   :straight t)
 
