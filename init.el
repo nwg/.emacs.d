@@ -25,6 +25,9 @@
 (when (file-exists-p custom-file)
   (load-file custom-file))
 
+(use-package tuareg
+  :straight t)
+
 (use-package which-key
   :straight t
   :config

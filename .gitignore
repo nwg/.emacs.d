@@ -4,6 +4,8 @@
 
 .DS_Store
 
+session.*
+elpa/*
 .org-id-locations
 .trash/
 bookmarks
