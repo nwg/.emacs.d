@@ -1,30 +1,110 @@
 ;; -*- mode: emacs-lisp; lexical-binding: t; -*-
-
 ;; (setq debug-on-error t)
 ;; (setq debug-ignored-errors nil)
 
-(require 'cl-lib)
 
-;; --- begin straight.el setup
+; straight.el bootstrapping (copy-pasted from website)
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name
         "straight/repos/straight.el/bootstrap.el"
-        user-emacs-directory))
-      (bootstrap-version 5))
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
         (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent
-         'inhibit-cookies)
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
 (straight-use-package 'use-package)
-;; --- end straight.el setup
 
+(use-package f
+  :straight t)
+
+(setq custom-file (f-join user-emacs-directory "custom.el"))
+(when (file-exists-p custom-file)
+  (load-file custom-file))
+
+(use-package tuareg
+  :straight t)
+
+(use-package which-key
+  :straight t
+  :config
+  (which-key-mode 1))
+
+(use-package lsp-mode
+  :straight t
+  :bind-keymap
+  ("C-s-l" . lsp-command-map)
+  :hook
+  (lsp-mode . lsp-enable-which-key-integration)
+  :config
+  (setq lsp-keymap-prefix "C-s-l"))
+
+(use-package nix-mode
+  :straight t
+  :after (lsp-mode)
+  :bind (:map nix-mode-map
+	      ("C-c h N" . #'nix-doc))
+  :config
+
+  (defun nix-doc (&optional key)
+    (interactive)
+    (let ((key (or
+                key
+                (and (called-interactively-p 'any) (prompt-current-word "Describe nix: "))
+                (error "Cannot determine key"))))
+      (shell-command (format "nix-doc %s" key))))
+
+  (add-hook 'nix-mode-hook #'nwg/enable-parens)
+;  (add-hook 'nix-mode-hook #'lsp)
+
+  (add-to-list 'lsp-language-id-configuration '(nix-mode . "nix"))
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection '("rnix-lsp"))
+                    :major-modes '(nix-mode)
+                    :server-id 'nix)))
+
+(use-package ggtags
+  :straight t
+  :init
+  (defun enable-ggtags ()
+    (with-eval-after-load 'xref
+      (add-hook 'xref-backend-functions #'ggtags--xref-backend -10 t)))
+  (add-hook 'prog-mode-hook #'enable-ggtags))
+  
+(use-package projectile
+  :straight t
+
+  :demand t
+  
+  :bind-keymap
+  ("C-s-p" . projectile-command-map)
+  
+  :custom
+  (projectile-tags-backend 'xref "Always use xref. Projectile prefers ggtags by default but it supports xref, anyway")
+  
+  :config
+  (setq projectile-project-search-path '("~/Project/"))
+  (projectile-discover-projects-in-search-path)
+  
+  :bind (:map projectile-mode-map
+	      ("s-p" . #'projectile-command-map)
+	      ("C-c p" . #'projectile-command-map)))
+
+(global-set-key (kbd "C-x C-\\") (lambda () (interactive) (find-file user-init-file)))
+(global-set-key (kbd "C-x e") (lambda () (interactive) (eval-buffer)))
+
+(add-to-list 'load-path (f-join user-emacs-directory "library/nwg-util/lisp"))
+(use-package nwg-util
+  :demand t)
+
+(require 'cl-lib)
 
 ; Some support packages needed by package setup
 (use-package f
@@ -37,8 +117,12 @@
 (when (featurep 'nwg-util)
   (load-library "nwg-util"))
 
+(setq sync-directory (f-join user-emacs-directory "sync"))
+(when (not (file-exists-p sync-directory))
+  (make-directory sync-directory))
+
 (defun sync-file (&rest args)
-  (apply #'f-join user-emacs-directory "sync" args))
+  (apply #'f-join sync-directory args))
 
 ;; Main Initialization
 
@@ -63,15 +147,6 @@
 (setq recentf-save-file (sync-file "recentf"))
 (recentf-mode 1)
 
-;; Customization setup
-(setq custom-git-file (f-join user-emacs-directory "custom-git.el"))
-(when (file-exists-p custom-git-file)
-  (load-file custom-git-file))
-
-(setq custom-file (sync-file "custom.el"))
-(when (file-exists-p custom-file)
-  (load-file custom-file))
-
 ;; Quick isearch mode <return>
 (defun nwg/isearch-quick-return ()
   (interactive)
@@ -95,7 +170,7 @@
   (setq nwg/initial-profile-path (nwg/user-dot-profile-path)))
 
 ;; Set up PATH and 'exec-path
-(let* ((additions '("~/.nix-profile/bin" "~/.local/bin" "/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin"))
+(let* ((additions '("~/.nix-profile/bin" "~/.local/bin" "/Library/TeX/texbin" "/opt/local/bin" "/Applications/Racket v8.1/bin" "/run/current-system/sw/bin"))
        (additions-expanded (mapcar #'expand-file-name additions))
        (new-environment-path (nwg/prepend-if-missing additions-expanded nwg/initial-profile-path))
        (new-exec-path (nwg/prepend-if-missing additions-expanded exec-path)))
@@ -286,7 +361,8 @@
 (use-package counsel
   :straight t
   :after ivy
-  :bind (("C-x r m" . counsel-bookmark)))
+  :bind (("C-x r m" . counsel-bookmark)
+         ("C-x r D" . counsel-bookmarked-directory)))
 
 (use-package prescient
   :straight t)
@@ -535,6 +611,7 @@
                           (agenda . 5)
                           (projects . 7)
                           (registers . 5)))
+  (dashboard-setup-startup-hook)
 
 )
 
