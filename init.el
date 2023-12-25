@@ -17,6 +17,9 @@
 
 (straight-use-package 'use-package)
 
+(use-package f
+  :straight t)
+
 (add-to-list 'load-path "~/.emacs.d/lisp")
 
 (use-package saveplace
@@ -24,9 +27,6 @@
   (setq save-place-file (f-join user-emacs-directory "sync/" "places")))
 
 (save-place-mode 1)
-
-(use-package f
-  :straight t)
 
 (setq custom-file (f-join user-emacs-directory "custom.el"))
 (when (file-exists-p custom-file)
