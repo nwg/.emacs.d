@@ -1,4 +1,3 @@
-
 ; straight.el bootstrapping (copy-pasted from website)
 (defvar bootstrap-version)
 (let ((bootstrap-file
@@ -18,12 +17,22 @@
 
 (straight-use-package 'use-package)
 
+(add-to-list 'load-path "~/.emacs.d/lisp")
+
+(use-package saveplace
+  :config
+  (setq save-place-file (f-join user-emacs-directory "sync/" "places")))
+
+(save-place-mode 1)
+
 (use-package f
   :straight t)
 
 (setq custom-file (f-join user-emacs-directory "custom.el"))
 (when (file-exists-p custom-file)
   (load-file custom-file))
+
+(setq-default doc-view-resolution 200)
 
 (use-package solarized-theme
   :straight t
